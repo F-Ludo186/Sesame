@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sesame · le comptoir</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header class="site-header">
+    <p class="brand">Sesame</p>
+    <p class="brand-sub">le comptoir</p>
+  </header>
+
+  <main class="register">
+
+    <div class="menu-area">
+      <nav id="categories" aria-label="Catégories de la carte">
+        <button type="button" value="all" class="is-active">Tout</button>
+        <button type="button" value="coffee">Cafés</button>
+        <button type="button" value="tea">Thés &amp; autres</button>
+        <button type="button" value="pastry">Pâtisseries</button>
+      </nav>
+
+      <!--
+        Modèle d'une carte, à recréer en JavaScript pour chaque produit :
+
+        <article class="product">
+          <span class="product-category">Café</span>
+          <h3 class="product-name">Espresso</h3>
+          <p class="product-price">2,20 €</p>
+          <button type="button" class="product-add">Ajouter</button>
+        </article>
+
+        Produit en rupture : la carte a en plus la classe is-sold-out,
+        et son bouton est désactivé (disabled).
+      -->
+      <section id="menu" aria-label="La carte"></section>
+    </div>
+
+    <aside id="ticket">
+      <div class="ticket-paper">
+
+        <form id="customer-form">
+          <label for="customer-name">Prénom-Nom  du client</label>
+          <div class="field-row">
+            <input id="customer-name" type="text" autocomplete="off">
+            <button type="submit">Valider</button>
+          </div>
+        </form>
+        
+        <div id="customer-card" class="customer-card">
+            <div id="customer-error" class="form-error hidden"></div>
+            <div id="customer-info" class="form-info"></div>
+            <div id="customer-derCommande" class="form-derCom"></div>
+            <div id="customer-derinfo" class="form-derCom"></div>
+        </div>
+
+        <h2 id="ticket-title">Ticket</h2>
+        <p id="ticket-empty">Le ticket est vide.</p>
+
+        <!--
+          Modèle d'une ligne du ticket, à recréer en JavaScript :
+
+          <li class="ticket-line">
+            <span class="line-name">Cappuccino</span>
+            <span class="line-qty">× 2</span>
+            <span class="line-price">7,40 €</span>
+            <button type="button" class="line-remove" aria-label="Retirer un Cappuccino">−</button>
+          </li>
+        -->
+        <ul id="ticket-lines"></ul>
+
+        <form id="promo-form">
+          <label id="labelPromo" for="promo-code">Code promo <span class="info" data-tooltip="">i</span></label>
+          <div class="field-row">
+            <input id="promo-code" type="text" autocomplete="off">
+            <button type="submit">Appliquer</button>
+          </div>
+        </form>
+        <p id="promo-message"></p>
+
+        <div class="ticket-sums">
+          <p class="sum-row"><span>Remise</span> <span id="pourcent-discount" class="remise"></span> <span id="ticket-discount">0,00 €</span></p>
+          <p class="sum-row sum-total"><span>Total</span> <strong id="ticket-total">0,00 €</strong></p>
+        </div>
+
+        <button type="button" id="checkout">Encaisser</button>
+
+      </div>
+    </aside>
+
+  </main>
+  <div id="popup-recap" class="popup-recap hidden">
+      <div class="popup-content">
+
+        <button id="popup-close" type="button">×</button>
+
+        <h2>Récapitulatif de la commande</h2>
+
+        <div id="recap-client"></div>
+        <div id="recap-date"></div>
+
+        <ul id="recap-lines"></ul>
+
+        <div id="recap-promo"></div>
+        <div id="recap-total"></div>
+
+        <button id="btn-print" type="button">
+            Imprimer
+        </button>
+
+        </div>
+    </div>
+
+  <script src="menu.js"></script>
+  <script src="promos.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
