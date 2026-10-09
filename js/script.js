@@ -2,7 +2,6 @@ const $ = (selector) => document.querySelector(selector);
 
 const order = new Order();
 
-
 const customerNameInput = $("#customer-name");
 const promoCodeInput = $("#promo-code");
 const promoMessage = $("#promo-message");
