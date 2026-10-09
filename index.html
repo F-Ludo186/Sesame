@@ -16,11 +16,29 @@
 <body>
 
   <header class="site-header">
+    <button id="menu-button" class="menu-button" type="button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
     <p class="brand">Sesame</p>
     <p class="brand-sub">le comptoir</p>
+
+    <div id="admin-menu" class="admin-menu hidden">
+        <button id="btn-historique" type="button">
+            Historique
+        </button>
+
+        <button id="btn-promotions" type="button">
+            Promotions
+        </button>
+    </div>
+
+
   </header>
 
-  <main class="register">
+  <main id="caisse" class="register">
 
     <div class="menu-area">
       <nav id="categories" aria-label="Catégories de la carte">
@@ -99,31 +117,40 @@
     </aside>
 
   </main>
+  
   <div id="popup-recap" class="popup-recap hidden">
-      <div class="popup-content">
+    <div class="popup-content">
 
-        <button id="popup-close" type="button">×</button>
+      <button id="popup-close" type="button">×</button>
+      <p class="brand">Sesame</p>
+      <p class="brand-sub">le comptoir</p>
 
-        <h2>Récapitulatif de la commande</h2>
+      <h2>Récapitulatif de la commande</h2>
 
-        <div id="recap-client"></div>
-        <div id="recap-date"></div>
+      <div id="recap-client"></div>
+      <div id="recap-date"></div>
 
-        <ul id="recap-lines"></ul>
+      <ul id="recap-lines"></ul>
 
-        <div id="recap-promo"></div>
-        <div id="recap-total"></div>
+      <div id="recap-promo"></div>
+      <div id="recap-total"></div>
 
-        <button id="btn-print" type="button">
-            Imprimer
-        </button>
+      <button id="btn-print" type="button">
+          Imprimer
+      </button>
 
-        </div>
-    </div>
+      </div>
+  </div>
 
-  <script src="menu.js"></script>
-  <script src="promos.js"></script>
-  <script src="script.js"></script>
+  <div id="view-container"></div>
+
+  <script src="js/menu.js"></script>
+  <script src="js/promos.js"></script>
+  <script src="js/script.js"></script>
+
+  <script src="js/order.js"></script>
+
+  <script src="js/historique.js"></script>
 </body>
 
 </html>

@@ -1,10 +1,8 @@
-
 const $ = (selector) => document.querySelector(selector);
 
 const customerNameInput = $("#customer-name");
 const promoCodeInput = $("#promo-code");
 const promoMessage = $("#promo-message");
-
 
 const ticket = [];
 let promoEnCours = null;
@@ -23,20 +21,28 @@ GetListeDiscount();
 displayMenu(menu);
 
 // navigation management
-const buttons = document.querySelectorAll("#categories button");
+
+
+// navigation menu admin
+$("#menu-button").addEventListener("click", () => {
+    $("#admin-menu").classList.toggle("hidden");
+    $("#menu-button").classList.toggle("is-open");
+});
+
+$("#btn-historique").addEventListener("click", afficherHistorique);
+$("#btn-promotions").addEventListener("click", afficherPrmotions);
 
 $('#categories').addEventListener('click', function (event) {
     const item = event.target.closest('button');
     if (!item) return;
-
+    
+    const buttons = document.querySelectorAll("#categories button");
     buttons.forEach((button) => {
         button.classList.remove("is-active");
     });
 
     item.classList.add("is-active");
-    
     displayMenu(getMenufiltered(item.value));
-
 });
 
 $("#promo-form").addEventListener('submit' , function (event) {
@@ -126,6 +132,7 @@ function separator(text){
   separator.append(hrleft, span , hrright)
   return separator;
 }
+
 
 function addToTicket(article){
   let ligne = ticket.find((item) => item.id === article.id);
@@ -350,7 +357,7 @@ function aficheTicketCaisse(commande){
   $("#recap-lines").innerHTML = "";
   $("#recap-promo").innerHTML = "";
   $("#recap-total").innerHTML = "";
-  
+
   $("#recap-client").textContent = commande.nom;
   $("#recap-date").textContent = formatDateHeure(commande.date);
 
@@ -411,6 +418,38 @@ function resetCommand(){
 
 }
 
+
+/// Gestion du menu admin
+async function afficherHistorique() {
+    await afficherVue("historique.html");
+    InitHistory();
+}
+
+async function afficherPrmotions() {
+    await afficherVue("promotions.html");
+}
+
+async function afficherVue(fichier) {
+
+    const response = await fetch(fichier);
+
+    const html = await response.text();
+    
+    $("#caisse").classList.add("hidden");
+    
+    $("#view-container").innerHTML = html;
+
+     $("#btn-retour-caisse").addEventListener("click", afficherCaisse);
+     
+     $("#admin-menu").classList.toggle("hidden");
+}
+
+function afficherCaisse() {
+    $("#view-container").innerHTML = "";
+    $("#caisse").classList.remove("hidden");
+}
+
+
 // outils
 function createToDOM(objectName, className, Texte ="", type = ""){
   const object = document.createElement(objectName);
@@ -445,3 +484,6 @@ function formatDateHeure(timestamp) {
     return date.toLocaleDateString("fr-FR") + " " +
            date.toLocaleTimeString("fr-FR");
 }
+
+
+

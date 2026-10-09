@@ -58,6 +58,8 @@ input:focus-visible {
 /* ---------- En-tête ---------- */
 
 .site-header {
+  position: relative;
+
   display: flex;
   align-items: baseline;
   gap: 14px;
@@ -85,7 +87,6 @@ input:focus-visible {
 }
 
 /* ---------- Mise en page ---------- */
-
 .register {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
@@ -593,7 +594,7 @@ input:focus-visible {
 
     background-color: var(--paper);
 
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+   /* box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);*/
 }
 
 .form-error {
@@ -644,4 +645,162 @@ input:focus-visible {
         box-shadow: none;
         border-radius: 0;
     }
+}
+
+/*  Gestion du menu  */
+
+.menu-button {
+    position: absolute;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 42px;
+    height: 42px;
+
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+
+    background: transparent;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+}
+
+.menu-button span {
+    width: 20px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--roast);
+}
+
+.menu-button:hover {
+    background: var(--cream-deep);
+}
+
+.admin-menu {
+    position: absolute;
+    top: 78px;
+    right: 24px;
+
+    display: flex;
+    flex-direction: column;
+
+    width: 180px;
+    padding: 8px;
+
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+
+    box-shadow: 0 8px 20px rgba(46, 29, 20, 0.15);
+
+    z-index: 1100;
+}
+
+.admin-menu.hidden {
+    display: none;
+}
+
+.admin-menu:not(.hidden) {
+    display: flex;
+}
+
+.admin-menu button {
+    padding: 10px 12px;
+
+    border: none;
+    border-radius: 7px;
+
+    background: transparent;
+    color: var(--roast);
+
+    text-align: left;
+    cursor: pointer;
+}
+
+.admin-menu button:hover {
+    background: var(--cream-deep);
+}
+
+.menu-button.is-open {
+    background: var(--cream-deep);
+}
+
+
+#caisse.hidden {
+    display: none;
+}
+
+html {
+    scrollbar-gutter: stable;
+}
+
+/* historique */
+#view-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 24px 64px;
+}
+
+.btn-retour {
+  margin-top: auto;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--roast);
+  color: var(--cream);
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+.btn-retour:hover {
+  background: var(--accent-dark);
+}
+
+#navClients {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+#navClients button {
+  padding: 8px 18px;
+  border: 1px solid var(--roast-soft);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--roast);
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+#navClients button:hover {
+  background: var(--cream-deep);
+}
+
+#navClients button.is-active {
+  background: var(--roast);
+  border-color: var(--roast);
+  color: var(--cream);
+}
+
+#client-filter {
+    width: 260px;
+    padding: 12px 18px;
+    border: 2px solid var(--line);
+    border-radius: 999px;
+    background: var(--bg);
+    font: inherit;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+#client-filter:focus {
+    outline: none;
+    border-color: var(--red);
+    background: var(--paper);
 }
