@@ -27,19 +27,14 @@ class Order {
     }
 
     removeArticle(article) {
-        const line = this.lines.find(
-            (item) => item.id === article.id
-        );
+        const line = this.lines.find( (item) => item.id === article.id);
 
         if (!line) return;
 
         line.quantity--;
 
         if (line.quantity === 0) {
-            const index = this.lines.findIndex(
-                (item) => item.id === article.id
-            );
-
+            const index = this.lines.findIndex( (item) => item.id === article.id );
             this.lines.splice(index, 1);
         }
     }

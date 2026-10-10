@@ -49,9 +49,11 @@ $('#categories').addEventListener('click', function (event) {
 
 $("#promo-form").addEventListener('submit' , function (event) {
     event.preventDefault();
-    promoEnCours = controlPromo();
+    /*promoEnCours = controlPromo();*/
+    order.applyPromo(controlPromo());
     displayDiscount();
-    CalculPrixTicket();
+    displayTicket();
+    /*CalculPrixTicket();*/
 });
 
 $("#customer-form").addEventListener( 'submit' , function(event) {
@@ -118,10 +120,11 @@ function CreateArticle(menu){
   boutton.disabled = !menu.available;
 
   boutton.addEventListener("click", () => {
-    addToTicket(menu);
+    order.addArticle(menu);
     displayTicket();
   });
-  
+
+    
   article.append(category , title, price ,boutton)
   return article;
 }
@@ -136,7 +139,7 @@ function separator(text){
 }
 
 
-function addToTicket(article){
+/*function addToTicket(article){
   let ligne = ticket.find((item) => item.id === article.id);
   if ( ! ligne) {
     ligne = {
@@ -149,23 +152,24 @@ function addToTicket(article){
   } else { 
     ligne.quantity++ ;
   }
-}
+}*/
 
 // gestion du ticket
 function displayTicket(){
   const ticketLigne = $("#ticket-lines");
   ticketLigne.innerHTML = "";
 
-  for(let i=0 ; i< ticket.length ; i++){
+  for(let i=0 ; i< order.lines.length ; i++){
     const line = createToDOM("li", "ticket-line");
-    const linename = createToDOM("span", "line-name",ticket[i].name );
-    const lineqty  = createToDOM("span", "line-qty","x" + ticket[i].quantity );
-    let totalLine = ticket[i].quantity * ticket[i].unitPrice;
-    const linePrice  = createToDOM("span", "line-price",  formatPrice(totalLine) );
+    const linename = createToDOM("span", "line-name",order.lines[i].name );
+    const lineqty  = createToDOM("span", "line-qty","x" + order.lines[i].quantity );
+    /*let totalLine = order.lines[i].quantity * order.lines[i].unitPrice;*/
+    const linePrice  = createToDOM("span", "line-price",  formatPrice(order.getSubtotal()) );
     const boutton = createToDOM("button","line-remove", "-" , "button")
     
     boutton.addEventListener("click", () => {
-      RemoveToTicket(ticket[i]);
+      order.removeArticle(order.lines[i]);
+      /*RemoveToTicket(ticket[i]);*/
       displayTicket();
     });
     
@@ -175,11 +179,13 @@ function displayTicket(){
   }
   if(ticket.length === 0 ) $("#ticket-empty").style.display = "block";
   
-  CalculPrixTicket();
+  /*CalculPrixTicket();*/
+  $("#ticket-discount").textContent = formatPrice(order.getDiscount());
+  $("#ticket-total").textContent = formatPrice(order.getTotal());
   
 }
 
-function CalculPrixTicket(){
+/*function CalculPrixTicket(){
   totalticket = 0;
   totalticketAvRemise = ticket.reduce( function(sum, objet ) {
     return sum + (objet.quantity * objet.unitPrice)
@@ -193,16 +199,16 @@ function CalculPrixTicket(){
   $("#ticket-discount").textContent = formatPrice(totalRemise);    
   $("#ticket-total").textContent = formatPrice(totalticket);    
 
-}
+}*/
 
-function RemoveToTicket(article){
+/*function RemoveToTicket(article){
   let ligne = ticket.find((item) => item.id === article.id);
   ligne.quantity --;
   if (ligne.quantity === 0) {
         const index = ticket.findIndex((item) => item.id === article.id);
         ticket.splice(index, 1);
     } 
-}
+}*/
 
 // gestion promo
 function controlPromo(){
@@ -233,7 +239,8 @@ function displayDiscount (){
           
         const boutton = createToDOM("button","line-remove", "-" , "button")
         boutton.addEventListener("click", () => {
-            RemoveDiscount();
+          order.removePromo();  
+          /*RemoveDiscount();*/
         });
         $("#pourcent-discount").append(boutton);
       }
