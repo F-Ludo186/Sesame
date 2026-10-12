@@ -9,6 +9,13 @@
     font-size: 1.2rem;
 }
 
+#history-filters,
+#history-pagination     {
+margin: 20px 0px;
+gap: 10px;
+}
+
+
 #history-search {
     flex: 1;
     min-width: 0;
@@ -75,7 +82,7 @@
 
 /* Cellules */
 #history-table td {
-    padding: 13px 18px;
+    padding: 5px 18px;
     border-bottom: 1px solid #eee9e4;
     vertical-align: middle;
 }
@@ -119,4 +126,16 @@
     #history-table td {
         padding: 10px 12px;
     }
+}
+
+#history-previous,
+#history-next {
+  margin-top: auto;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--roast);
+  color: var(--cream);
+  font-weight: 600;
+  transition: background 0.15s;
 }
