@@ -140,7 +140,7 @@
   transition: background 0.15s;
 }
 
-#history-previous,
-#history-next  {
+#history-previous:hover,
+#history-next:hover {
   background: var(--accent-dark);
 }
