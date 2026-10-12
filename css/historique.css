@@ -144,3 +144,23 @@
 #history-next:hover {
   background: var(--accent-dark);
 }
+
+.history-heading {
+    display: flex;
+    align-items: center;
+    gap: 50px;
+    margin-bottom: 24px;
+}
+
+.history-heading header h2 {
+    margin-top: 0;
+}
+
+.history-heading header p {
+    margin-bottom: 0;
+}
+
+.btn-retour {
+    flex-shrink: 0;
+    margin-bottom: auto;
+}
