@@ -1,28 +1,64 @@
+  <link rel="stylesheet" href="css/historique.css">
+
 <section id="historique-panel">
     
     <button id="btn-retour-caisse" class="btn-retour" type="button">
         ← Retour
     </button>
-    
-    <h2>Historique des commandes</h2>
+    <header>
+        <h2>Historique des commandes</h2>
+        <p>Retrouve et consulte les commandes enregistrées.</p>
+    </header>
 
-    <div class="historique-filtres">
-        <h2>Retrouve et consulte les commandes enregistrées.</h2>
-        <label for="client-filter" >Client</label>
-
+    <!-- Recherche et filtres -->
+    <div id="history-filters">
+        <span class="search-icon" aria-hidden="true">🔍</span>
         <input
             id="client-filter"
-            list="clients-list"
             type="text"
             placeholder="Rechercher un client..."
             autocomplete="off"
+            list="clients-list"
         >
 
         <datalist id="clients-list"></datalist>
-
+        
+        <button id="history-search-button" type="button">
+            Rechercher
+        </button>
     </div>
 
-    <div id="historique-liste">
-        ...
+     <!-- Tableau -->
+    <div id="history-table-container">
+        <table id="history-table">
+
+            <thead>
+                <tr>
+                    <th scope="col">Date</th>
+                    <th scope="col">Client</th>
+                    <th scope="col">Total</th>
+                    <th scope="col">Détail</th>
+                </tr>
+            </thead>
+
+            <tbody id="history-table-body">
+                <!-- Les lignes seront générées en JavaScript -->
+            </tbody>
+    
+        </table>
     </div>
+
+     <!-- Pagination -->
+    <nav id="history-pagination" aria-label="Pagination de l'historique">
+        <button id="history-previous" type="button">
+            Précédent
+        </button>
+
+        <span id="history-page">Page 1</span>
+
+        <button id="history-next" type="button">
+            Suivant
+        </button>
+    </nav>
+    
 </section>

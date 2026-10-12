@@ -6,6 +6,7 @@ const filtre = $("#historique-filtres");
 function InitHistory(){
     InitEvent();
     initFilter();
+
 }
 
 function InitEvent(){
@@ -29,8 +30,6 @@ function initFilter(){
         option.value = client;
         liste.append(option);
     }
-
-    
 }
 
 function getHistoryfiltered(value){
@@ -78,4 +77,3 @@ async function createFile() {
         return [];
     }
 }
-

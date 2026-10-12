@@ -11,60 +11,86 @@ const historique = JSON.parse(
 
 updatePromotionTooltip();
 displayMenu(menu);
+initEvents()
 
+function initEvents() {
+    initNavigationEvents();
+    initMenuEvents();
+    initPromotionEvents();
+    initCustomerEvents();
+    initCheckoutEvents();
+    initPopupCloseEvents();
+    initPrintTicketEvent
+}
 
-// navigation menu admin
-$("#menu-button").addEventListener("click", () => {
-    $("#admin-menu").classList.toggle("hidden");
-    $("#menu-button").classList.toggle("is-open");
-});
+/* EVENT */
+function initNavigationEvents() {
+  $("#btn-historique").addEventListener("click", showHistoryView);
+  $("#btn-promotions").addEventListener("click", showPromotionsView);
+}
 
-$("#btn-historique").addEventListener("click", showHistoryView);
-$("#btn-promotions").addEventListener("click", showPromotionsView);
+function initMenuEvents(){
+  // navigation menu admin
+  $("#menu-button").addEventListener("click", () => {
+      $("#admin-menu").classList.toggle("hidden");
+      $("#menu-button").classList.toggle("is-open");
+  });
 
-$('#categories').addEventListener('click', function (event) {
-    const item = event.target.closest('button');
-    if (!item) return;
-    
-    const buttons = document.querySelectorAll("#categories button");
-    buttons.forEach((button) => {
-        button.classList.remove("is-active");
-    });
+  $('#categories').addEventListener('click', function (event) {
+      const item = event.target.closest('button');
+      if (!item) return;
+      
+      const buttons = document.querySelectorAll("#categories button");
+      buttons.forEach((button) => {
+          button.classList.remove("is-active");
+      });
 
-    item.classList.add("is-active");
-    displayMenu(getFilteredMenu(item.value));
-});
+      item.classList.add("is-active");
+      displayMenu(getFilteredMenu(item.value));
+  });
+}
 
-$("#promo-form").addEventListener('submit' , function (event) {
+function initPromotionEvents(){
+  $("#promo-form").addEventListener('submit' , function (event) {
+      event.preventDefault();
+      const promo = validatePromotionCode();
+      if(promo != null ) order.applyPromo(promo);
+      displayPromotion();
+      displayTicket();
+  });
+}
+
+function initCustomerEvents(){
+  $("#customer-form").addEventListener( 'submit' , function(event) {
     event.preventDefault();
-    const promo = validatePromotionCode();
-    if(promo != null ) order.applyPromo(promo);
-    displayPromotion();
-    displayTicket();
+    setCustomer();
+    displayCustomerHistory();
+  });
+}
 
-});
+function initCheckoutEvents(){
+  $("#checkout").addEventListener( 'click' , function () {
+    if(validateCheckout()) {
+      saveOrderHistory();
+      if( !order.isEmpty()) displayReceipt();
+    }
+  });
+}
 
-$("#customer-form").addEventListener( 'submit' , function(event) {
-  event.preventDefault();
-  setCustomer();
-  displayCustomerHistory();
-});
+function initPopupCloseEvents(){
+  $("#popup-close").addEventListener("click" , function () {
+    $("#popup-recap").classList.add("hidden");
+    resetCommand();
+  });
+}
 
-$("#checkout").addEventListener( 'click' , function () {
-  if(validateCheckout()) {
-    saveOrderHistory();
-    if( !order.isEmpty()) displayReceipt();
-  }
- });
+function initPrintTicketEvent(){
+  $("#btn-print").addEventListener("click", () => {
+      window.print();   
+  });
+}
 
-$("#popup-close").addEventListener("click" , function (event) {
-  $("#popup-recap").classList.add("hidden");
-  resetCommand();
-});
 
-$("#btn-print").addEventListener("click", () => {
-    window.print();   
-});
 
 function updatePromotionTooltip(){
   let text = promos
@@ -356,11 +382,9 @@ function resetCommand(){
 
   customerNameInput.value = "";
   promoCodeInput.value = "";
-  
-  RemoveCustomer();
 
   displayTicket();
-  displayDiscount();
+  displayPromotion();
 }
 
 /// Gestion du menu admin
@@ -392,4 +416,3 @@ function showCheckoutView() {
     $("#view-container").innerHTML = "";
     $("#caisse").classList.remove("hidden");
 }
-
