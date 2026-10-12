@@ -66,4 +66,10 @@ class Order {
     isEmpty() {
         return this.lines.length === 0;
     }
+
+    clear() {
+        this.customerName = "";
+        this.lines = [];
+        this.promo = null;
+    }
 }

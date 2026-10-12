@@ -2,27 +2,15 @@ const $ = (selector) => document.querySelector(selector);
 
 const order = new Order();
 
-const customerNameInput = $("#customer-name");
 const promoCodeInput = $("#promo-code");
-const promoMessage = $("#promo-message");
-
-const ticket = [];
-let promoEnCours = null;
+const customerNameInput = $("#customer-name");
 
 const historique = JSON.parse(
     localStorage.getItem("historiqueTickets") || "[]"
 );
 
-let totalticketAvRemise = 0;
-let remisePromo = 0;
-let totalRemise = 0;
-let totalticket = 0;
-let customerName = "";
-
-GetListeDiscount();
+updatePromotionTooltip();
 displayMenu(menu);
-
-// navigation management
 
 
 // navigation menu admin
@@ -31,8 +19,8 @@ $("#menu-button").addEventListener("click", () => {
     $("#menu-button").classList.toggle("is-open");
 });
 
-$("#btn-historique").addEventListener("click", afficherHistorique);
-$("#btn-promotions").addEventListener("click", afficherPrmotions);
+$("#btn-historique").addEventListener("click", showHistoryView);
+$("#btn-promotions").addEventListener("click", showPromotionsView);
 
 $('#categories').addEventListener('click', function (event) {
     const item = event.target.closest('button');
@@ -44,27 +32,29 @@ $('#categories').addEventListener('click', function (event) {
     });
 
     item.classList.add("is-active");
-    displayMenu(getMenufiltered(item.value));
+    displayMenu(getFilteredMenu(item.value));
 });
 
 $("#promo-form").addEventListener('submit' , function (event) {
     event.preventDefault();
-    /*promoEnCours = controlPromo();*/
-    order.applyPromo(controlPromo());
-    displayDiscount();
+    const promo = validatePromotionCode();
+    if(promo != null ) order.applyPromo(promo);
+    displayPromotion();
     displayTicket();
-    /*CalculPrixTicket();*/
+
 });
 
 $("#customer-form").addEventListener( 'submit' , function(event) {
   event.preventDefault();
-  getinfoCustemer();
-
+  setCustomer();
+  displayCustomerHistory();
 });
 
 $("#checkout").addEventListener( 'click' , function () {
-  const histo = saveHistory();
-  if(histo != null) aficheTicketCaisse(histo);
+  if(validateCheckout()) {
+    saveOrderHistory();
+    if( !order.isEmpty()) displayReceipt();
+  }
  });
 
 $("#popup-close").addEventListener("click" , function (event) {
@@ -76,7 +66,7 @@ $("#btn-print").addEventListener("click", () => {
     window.print();   
 });
 
-function GetListeDiscount(){
+function updatePromotionTooltip(){
   let text = promos
     .map((t) => t.code + " x " + t.nb)
     .join("\n");
@@ -84,7 +74,7 @@ function GetListeDiscount(){
 }
 
 // Getion du menu
-function getMenufiltered(value){
+function getFilteredMenu(value){
   if (value === "all") return menu;
   return menu.filter((p)=> p.category === value).sort((a, b) => b.available - a.available);
 }
@@ -95,23 +85,23 @@ function displayMenu(menufiltered){
   const menuAviable = menufiltered.filter((menu) => menu.available).sort((a,b)=> a.name.localeCompare(b.name));
   const menuSoldeout = menufiltered.filter((menu) => !menu.available).sort((a,b)=> a.name.localeCompare(b.name));
 
-  menuSection.appendChild(separator("Disponible"));
+  menuSection.appendChild(createSectionSeparator("Disponible"));
 
   for(let i= 0 ; i< menuAviable.length ; i++){
-    const article = CreateArticle(menuAviable[i]);
+    const article = createMenuItem(menuAviable[i]);
     menuSection.append(article);
   }
   if(menuSoldeout.length >= 1) {
-    menuSection.appendChild(separator("Epuisé"));
+    menuSection.appendChild(createSectionSeparator("Epuisé"));
 
     for(let i= 0 ; i< menuSoldeout.length ; i++){
-      const article = CreateArticle(menuSoldeout[i]);
+      const article = createMenuItem(menuSoldeout[i]);
       menuSection.append(article);
     }
   }
 }
 
-function CreateArticle(menu){
+function createMenuItem(menu){
   const article = createToDOM("article", "product");
   const category = createToDOM("span", "product-category" ,menu.category );
   const title = createToDOM("h3", "product-name",menu.name );
@@ -123,13 +113,12 @@ function CreateArticle(menu){
     order.addArticle(menu);
     displayTicket();
   });
-
     
   article.append(category , title, price ,boutton)
   return article;
 }
 
-function separator(text){
+function createSectionSeparator(text){
   const separator = createToDOM("div", "separator");
   const hrleft = createToDOM("hr");
   const hrright = createToDOM("hr");
@@ -137,22 +126,6 @@ function separator(text){
   separator.append(hrleft, span , hrright)
   return separator;
 }
-
-
-/*function addToTicket(article){
-  let ligne = ticket.find((item) => item.id === article.id);
-  if ( ! ligne) {
-    ligne = {
-      id: article.id,
-      name: article.name,
-      unitPrice: article.price,
-      quantity: 1
-    };
-    ticket.push(ligne);
-  } else { 
-    ligne.quantity++ ;
-  }
-}*/
 
 // gestion du ticket
 function displayTicket(){
@@ -163,13 +136,11 @@ function displayTicket(){
     const line = createToDOM("li", "ticket-line");
     const linename = createToDOM("span", "line-name",order.lines[i].name );
     const lineqty  = createToDOM("span", "line-qty","x" + order.lines[i].quantity );
-    /*let totalLine = order.lines[i].quantity * order.lines[i].unitPrice;*/
     const linePrice  = createToDOM("span", "line-price",  formatPrice(order.getSubtotal()) );
     const boutton = createToDOM("button","line-remove", "-" , "button")
     
     boutton.addEventListener("click", () => {
       order.removeArticle(order.lines[i]);
-      /*RemoveToTicket(ticket[i]);*/
       displayTicket();
     });
     
@@ -179,136 +150,107 @@ function displayTicket(){
   }
   if(ticket.length === 0 ) $("#ticket-empty").style.display = "block";
   
-  /*CalculPrixTicket();*/
   $("#ticket-discount").textContent = formatPrice(order.getDiscount());
   $("#ticket-total").textContent = formatPrice(order.getTotal());
   
 }
 
-/*function CalculPrixTicket(){
-  totalticket = 0;
-  totalticketAvRemise = ticket.reduce( function(sum, objet ) {
-    return sum + (objet.quantity * objet.unitPrice)
-  }, 0);
-  totalRemise = 0;
-
-  remisePromo = promoEnCours?.remise === undefined ? 0 : promoEnCours.remise ;
-  if(remisePromo != 0) totalRemise = -1 * ((totalticketAvRemise * remisePromo) / 100);
-
-  totalticket = totalticketAvRemise + totalRemise ;
-  $("#ticket-discount").textContent = formatPrice(totalRemise);    
-  $("#ticket-total").textContent = formatPrice(totalticket);    
-
-}*/
-
-/*function RemoveToTicket(article){
-  let ligne = ticket.find((item) => item.id === article.id);
-  ligne.quantity --;
-  if (ligne.quantity === 0) {
-        const index = ticket.findIndex((item) => item.id === article.id);
-        ticket.splice(index, 1);
-    } 
-}*/
-
 // gestion promo
-function controlPromo(){
+function validatePromotionCode(){
   if(promoCodeInput.value === "") return null;
 
   const promoInput = normaliseUpperCase(promoCodeInput.value);
   const promo =promos.find((item) => item.code === promoInput);
-  return promo ?? null;
+  const promoMessage = $("#promo-message");
+
+  if(promo.nb === 0) {
+      promoMessage.textContent = 'Plus de ' + order.promo.libelle;
+      return null;
+  } else if(order.promo != null) {
+    promoMessage.textContent = 'Une promotion est déjà en cours ';
+    return null;
+  }
+  promoCodeInput.value = "";
+  return promo;
 }
 
-function displayDiscount (){
-   $("#pourcent-discount").innerHTML = "";
+function displayPromotion (){
+  $("#pourcent-discount").textContent = "";
+  
+  if(order.promo != null) {
+    $("#pourcent-discount").textContent = "- " + order.promo.remise + " %";
+    $("#pourcent-discount").setAttribute("data-tooltip", "Remises restantes : " + order.promo.nb);
+    
+    const boutton = createToDOM("button","line-remove", "-" , "button")
+    boutton.addEventListener("click", () => {
+      order.removePromo();  
+      displayPromotion();
+    });
 
-  if(promoEnCours === null ){
-    $("#pourcent-discount").textContent = "";
-    promoMessage.textContent = "";
+    $("#pourcent-discount").append(boutton);
   } else {
-    if(promoEnCours.nb === 0) {
-      promoMessage.textContent = 'Plus de ' + promoEnCours.libelle;
-    } else {
-      if(remisePromo != 0) { 
-        promoMessage.textContent = 'Une promotion est déjà en cours ';
-      } else {
-        remisePromo = promoEnCours.remise;
-        $("#pourcent-discount").textContent = "- " + remisePromo + " %";
-       
-        $("#pourcent-discount").setAttribute("data-tooltip", "Remises restantes : " + promoEnCours.nb);
-          
-        const boutton = createToDOM("button","line-remove", "-" , "button")
-        boutton.addEventListener("click", () => {
-          order.removePromo();  
-          /*RemoveDiscount();*/
-        });
-        $("#pourcent-discount").append(boutton);
-      }
-    }
+     $("#pourcent-discount").innerHTML ="";
   }
 }
 
-function RemoveDiscount(){
-  promoEnCours = null;
-  remisePromo = 0;
-  displayDiscount();
-  CalculPrixTicket();
-}
-
-function RemoveCustomer(){
+function clearCustomer(){
   $("#customer-info").textContent= "";
   $("#customer-derCommande").textContent= "";
   $("#customer-derinfo").textContent= "";
+  order.customerName = "";
 }
 
 // customer
-function getinfoCustemer(){
-  RemoveCustomer()
-   
+function setCustomer(){
+  clearCustomer()
+  
   if(customerNameInput.value === "") return null;
 
-  customerName = normaliseUpperCase(customerNameInput.value);
+  order.customerName = normaliseUpperCase(customerNameInput.value);
   
-  $("#customer-info").textContent = customerName;
+  $("#customer-info").textContent = order.customerName;
 
   const span = createToDOM("span", "" );
   const boutton = createToDOM("button","line-remove", "-" , "button")
-    boutton.addEventListener("click", () => {
-        RemoveCustomer();
-    });
+  boutton.addEventListener("click", () => {
+        clearCustomer();
+  });
+    
   span.append(boutton);
   $("#customer-info").append(span);
-
-
-  const histo = historique.findLast((h) => h.nom === customerName);
+  customerNameInput.value = "";
+}
+  
+function displayCustomerHistory(){
+  const histo = historique.findLast((h) => h.customerName === order.customerName);
   if(histo) {
     $("#customer-derCommande").textContent = "Derniere commande : " + formatDateHeure(histo.date);
       
-    let nbArticle = histo.lignes.reduce( function(sum, objet ) {
+    let nbArticle = histo.lines.reduce( function(sum, objet ) {
       return sum + objet.quantity
     }, 0);
 
-   $("#customer-derinfo").textContent = `${nbArticle} article(s) pour un total de ${formatPrice(histo.total)}\t` ; 
+   $("#customer-derinfo").textContent = `${nbArticle} article(s) pour un total de ${formatPrice(histo.totalorder)}\t` ; 
    
     let info = createToDOM("span", "info", "i");
-    info.setAttribute("data-tooltip", GetHistoString(histo));
+    info.setAttribute("data-tooltip", formatOrderHistory(histo));
     $("#customer-derinfo").append(info);
   }
 }
 
-function GetHistoString(command) {
+function formatOrderHistory(command) {
 
     if (!command) return "";
 
     let text = "";
 
-    text += `${command.nom}\n`;
+    text += `${command.customerName}\n`;
     text += `le ${formatDateHeure(command.date)}\n`;
     text += `──────────────────────────────────\n`;
 
-    for (let i = 0; i < command.lignes.length; i++) {
+    for (let i = 0; i < command.lines.length; i++) {
 
-        const ligne = command.lignes[i];
+        const ligne = command.lines[i];
 
         const nom = ligne.name.padEnd(20);
         const quantite = `x${ligne.quantity}`.padStart(4);
@@ -336,47 +278,49 @@ function GetHistoString(command) {
     return text;
 }
 
+function validateCheckout(){
+  if(order.customerName === "") {
+    customerNameInput.focus();
+    return false
+  } ;
+
+  if(order.lines.length === 0){
+    alert("Encaissement impossible : le ticket est vide !!!");
+    return false
+  } ;
+
+  return true;
+}
+
 // sauve hitory
-function saveHistory(){
-  if(customerName === "") return null ;
-  if(ticket.length === 0 ) return null;
-  
-  if(promoEnCours != null) promoEnCours.nb--;
+function saveOrderHistory(){
+  if(order.promo != null) order.promo.nb--;
 
-  const histo = {
-    nom : customerName,
-    date:  Date.now() ,
-    lignes : [...ticket],
-    promo: promoEnCours,
-    totalRemise : totalRemise,
-    total :  totalticket
-   } ;
-
+  const histo = {...order, totalRemise: order.getDiscount() ,totalorder : order.getTotal() };
+ 
   historique.push(histo);
 
   localStorage.setItem(
     "historiqueTickets",
     JSON.stringify(historique)
   );
-  return histo;
 }
 
-function aficheTicketCaisse(commande){
+function displayReceipt(){
   // Nettoyage du popup
   $("#recap-lines").innerHTML = "";
   $("#recap-promo").innerHTML = "";
   $("#recap-total").innerHTML = "";
 
-  $("#recap-client").textContent = commande.nom;
-  $("#recap-date").textContent = formatDateHeure(commande.date);
+  $("#recap-client").textContent = order.customerName;
+  $("#recap-date").textContent = formatDateHeure(order.date);
 
   const recapLine = $("#recap-lines") ;
-  for(let i = 0 ; i < commande.lignes.length ; i++){
+  for(let i = 0 ; i < order.lines.length ; i++){
     const line = createToDOM("li", "ticket-line");
-    const linename = createToDOM("span", "line-name",commande.lignes[i].name );
-    const lineqty  = createToDOM("span", "line-qty","x" + commande.lignes[i].quantity );
-    let totalLine = commande.lignes[i].quantity * commande.lignes[i].unitPrice;
-    const linePrice  = createToDOM("span", "line-price",  formatPrice(totalLine) );
+    const linename = createToDOM("span", "line-name", order.lines[i].name );
+    const lineqty  = createToDOM("span", "line-qty","x" + order.lines[i].quantity );
+    const linePrice  = createToDOM("span", "line-price",  formatPrice(order.getSubtotal())  );
     
     line.append( linename, lineqty, linePrice);
     recapLine.append(line);
@@ -385,9 +329,9 @@ function aficheTicketCaisse(commande){
   const recappromo = $("#recap-promo");
   let textePromo = "Remise";
   let tremise = 0;
-  if (commande.promo !== null) {
-    textePromo = toProperCase(commande.promo.libelle) ;
-    tremise = commande.totalRemise;
+  if (order.promo !== null) {
+    textePromo = toProperCase(order.promo.libelle) ;
+    tremise = order.getDiscount();
   }
 
   let containerTot = createToDOM("p", "sum-row");
@@ -396,49 +340,40 @@ function aficheTicketCaisse(commande){
   containerTot.append(linename, linetot);
   recappromo.append(containerTot)
 
-
   const total = $("#recap-total");
   containerTot = createToDOM("p", "sum-row sum-total");
   linename = createToDOM("span", "", "Total" );
-  linetot  = createToDOM("span", "",formatPrice(commande.total));
+  linetot  = createToDOM("span", "",formatPrice(order.getTotal()));
   
   containerTot.append(linename, linetot);
   total.append(containerTot)
 
   $("#popup-recap").classList.remove("hidden");
-
 }
 
 function resetCommand(){
-  ticket.length = 0;
-  promoEnCours = null;
-  totalticketAvRemise = 0;
-  remisePromo = 0;
-  totalRemise = 0;
-  totalticket = 0;
-  customerName = "";
+  order.clear();
+
   customerNameInput.value = "";
   promoCodeInput.value = "";
   
   RemoveCustomer();
-   displayTicket();
-  displayDiscount();
-  CalculPrixTicket();
 
+  displayTicket();
+  displayDiscount();
 }
 
-
 /// Gestion du menu admin
-async function afficherHistorique() {
-    await afficherVue("historique.html");
+async function showHistoryView() {
+    await loadView("historique.html");
     InitHistory();
 }
 
-async function afficherPrmotions() {
-    await afficherVue("promotions.html");
+async function showPromotionsView() {
+    await loadView("promotions.html");
 }
 
-async function afficherVue(fichier) {
+async function loadView(fichier) {
 
     const response = await fetch(fichier);
 
@@ -448,51 +383,13 @@ async function afficherVue(fichier) {
     
     $("#view-container").innerHTML = html;
 
-     $("#btn-retour-caisse").addEventListener("click", afficherCaisse);
+     $("#btn-retour-caisse").addEventListener("click", showCheckoutView);
      
      $("#admin-menu").classList.toggle("hidden");
 }
 
-function afficherCaisse() {
+function showCheckoutView() {
     $("#view-container").innerHTML = "";
     $("#caisse").classList.remove("hidden");
 }
-
-
-// outils
-function createToDOM(objectName, className, Texte ="", type = ""){
-  const object = document.createElement(objectName);
-  if(type != "" ) object.type = type;
-  object.className = className;
-  if(Texte != "") object.textContent = Texte 
-  return object;
-}
-
-function toProperCase(texte) {
-    return texte.charAt(0).toUpperCase() + texte.slice(1);
-}
-
-
-function normaliseUpperCase(texte) {
-    return texte
-        .trim()
-        .toUpperCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")   // supprime les accents
-        .replace(/\s+/g, "-");
-}
-
-// Fournie : transforme 220 en "2,20 €". Tu n'as pas à la modifier.
-function formatPrice(cents) {
-  return (cents / 100).toFixed(2).replace(".", ",") + " €";
-}
-
-function formatDateHeure(timestamp) {
-    const date = new Date(timestamp);
-
-    return date.toLocaleDateString("fr-FR") + " " +
-           date.toLocaleTimeString("fr-FR");
-}
-
-
 

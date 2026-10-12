@@ -16,7 +16,7 @@ function initFilter(){
    
     const clients = [...new Set(
     historique
-        .map((commande) => commande.nom)
+        .map((commande) => commande.customerName)
     )]
     .sort((a, b) => a.localeCompare(b));
 
