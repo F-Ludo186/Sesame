@@ -6,7 +6,7 @@ const filtre = $("#historique-filtres");
 function InitHistory(){
     InitEvent();
     initFilter();
-
+    createRow(historique);
 }
 
 function InitEvent(){
@@ -47,10 +47,33 @@ function displayHistory(Historyfiltered){
     }
 }
 
-function CreateArticleHistory(history){
+function createRow(histoFiltered){
+    const tableBody = $("#history-table-body")
+    tableBody.innerHTML = "";
+
+    for(let i=0 ; i < histoFiltered.length ; i++){
+        const line = createHistoryRow(histoFiltered[i])
+        tableBody.append(line);
+    }
     
 
 }
+
+
+function createHistoryRow(commande) {
+    const row = createToDOM("tr","");
+    const dateCell = createToDOM("td","",formatDateHeure(commande.date));
+    const customerCell = createToDOM("td","",commande.customerName);
+    const totalCell = createToDOM("td","",formatPrice(commande.totalorder));
+    const detailCell = createToDOM("td","");
+    const button = createToDOM("button","","Voir","button");
+    detailCell.append(button);
+
+    row.append(dateCell, customerCell, totalCell, detailCell);
+
+    return row;
+}
+
 
 // auto complet pour client
 async function initAutocompletion() {
