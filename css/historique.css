@@ -139,3 +139,8 @@
   font-weight: 600;
   transition: background 0.15s;
 }
+
+#history-previous,
+#history-next  {
+  background: var(--accent-dark);
+}

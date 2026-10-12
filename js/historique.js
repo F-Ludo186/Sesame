@@ -38,7 +38,7 @@ function initFilter(){
 }
 
 function getHistoryfiltered(value){
-  if (value === "TOUS") return historique;
+  if (value === "TOUS" || value === "") return historique;
   return historique.filter((commande)=> commande.customerName === value).sort((a, b) => b.date - a.date);
 }
 
