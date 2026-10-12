@@ -10,7 +10,12 @@ function InitHistory(){
 }
 
 function InitEvent(){
-    
+    $("#history-search-button").addEventListener("click", () => {
+      const value = normaliseUpperCase($("#client-filter").value);
+        createRow(getHistoryfiltered(value));
+        $("#client-filter").value = "";
+  });
+
 }
 
 function initFilter(){
@@ -34,17 +39,7 @@ function initFilter(){
 
 function getHistoryfiltered(value){
   if (value === "TOUS") return historique;
-  return historique.filter((commande)=> commande.nom === value).sort((a, b) => b.date - a.date);
-}
-
-function displayHistory(Historyfiltered){
-    const HistoryListe = $("#historique-liste");
-    HistoryListe.innerHTML = "";
-    
-    for(let i= 0 ; i< Historyfiltered.length ; i++){
-        const article = CreateArticleHistory(Historyfiltered[i]);
-        HistoryListe.append(article);
-    }
+  return historique.filter((commande)=> commande.customerName === value).sort((a, b) => b.date - a.date);
 }
 
 function createRow(histoFiltered){
@@ -91,7 +86,7 @@ function lireData() {
 
 async function createFile() {
     try {
-        const noms = clients =  [... new Set(historique.map((nom) => nom.nom).sort((a, b) => a.localeCompare(b)))];
+        const noms = clients =  [... new Set(historique.map((nom) => nom.customerName).sort((a, b) => a.localeCompare(b)))];
  
         localStorage.setItem(DATA_KEY, JSON.stringify(noms));
         return noms;
