@@ -1,3 +1,19 @@
+const Category = Object.freeze({
+  COFFEE: "coffee",
+  TEA: "tea",
+  PASTRY: "pastry",
+});
+
+const CATEGORY_LABELS = Object.freeze({
+  [Category.COFFEE]: "Café",
+  [Category.TEA]: "Thé & autres",
+  [Category.PASTRY]: "Pâtisserie",
+});
+
+function getCategoryLabel(category) {
+  return CATEGORY_LABELS[category] ?? category;
+}
+
 // La carte du comptoir. Les prix sont en centimes.
 const menu = [
   { id: 1, name: "Espresso", category: "coffee", price: 220, available: true },

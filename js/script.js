@@ -20,7 +20,7 @@ function initEvents() {
     initCustomerEvents();
     initCheckoutEvents();
     initPopupCloseEvents();
-    initPrintTicketEvent
+    initPrintTicketEvent();
 }
 
 /* EVENT */
@@ -70,10 +70,13 @@ function initCustomerEvents(){
 
 function initCheckoutEvents(){
   $("#checkout").addEventListener( 'click' , function () {
-    if(validateCheckout()) {
-      saveOrderHistory();
-      if( !order.isEmpty()) displayReceipt();
-    }
+    const checkoutButton = $("#checkout");
+    if (checkoutButton.disabled) return;
+    if (!validateCheckout()) return;
+
+    checkoutButton.disabled = true;
+    saveOrderHistory();
+    displayReceipt();
   });
 }
 
@@ -114,22 +117,22 @@ function displayMenu(menufiltered){
   menuSection.appendChild(createSectionSeparator("Disponible"));
 
   for(let i= 0 ; i< menuAviable.length ; i++){
-    const article = createMenuItem(menuAviable[i]);
+    const article = createMenuItem(menuAviable[i], "" );
     menuSection.append(article);
   }
   if(menuSoldeout.length >= 1) {
     menuSection.appendChild(createSectionSeparator("Epuisé"));
 
     for(let i= 0 ; i< menuSoldeout.length ; i++){
-      const article = createMenuItem(menuSoldeout[i]);
+      const article = createMenuItem(menuSoldeout[i], "is-sold-out");
       menuSection.append(article);
     }
   }
 }
 
-function createMenuItem(menu){
-  const article = createToDOM("article", "product");
-  const category = createToDOM("span", "product-category" ,menu.category );
+function createMenuItem(menu, className){
+  const article = createToDOM("article", "product " + className);
+  const category = createToDOM("span", "product-category" , getCategoryLabel(menu.category) );
   const title = createToDOM("h3", "product-name",menu.name );
   const price = createToDOM("p", "product-price", formatPrice(menu.price));
   const boutton = createToDOM("button", "product-add", "Ajouter" , "button");
@@ -162,7 +165,7 @@ function displayTicket(){
     const line = createToDOM("li", "ticket-line");
     const linename = createToDOM("span", "line-name",order.lines[i].name );
     const lineqty  = createToDOM("span", "line-qty","x" + order.lines[i].quantity );
-    const linePrice  = createToDOM("span", "line-price",  formatPrice(order.getSubtotal()) );
+    const linePrice  = createToDOM("span", "line-price",  formatPrice(order.lines[i].unitPrice * order.lines[i].quantity) );
     const boutton = createToDOM("button","line-remove", "-" , "button")
     
     boutton.addEventListener("click", () => {
@@ -174,7 +177,7 @@ function displayTicket(){
     $("#ticket-empty").style.display = "none";
     ticketLigne.append(line)
   }
-  if(ticket.length === 0 ) $("#ticket-empty").style.display = "block";
+  if(order.lines.length === 0 ) $("#ticket-empty").style.display = "block";
   
   $("#ticket-discount").textContent = formatPrice(order.getDiscount());
   $("#ticket-total").textContent = formatPrice(order.getTotal());
@@ -188,9 +191,13 @@ function validatePromotionCode(){
   const promoInput = normaliseUpperCase(promoCodeInput.value);
   const promo =promos.find((item) => item.code === promoInput);
   const promoMessage = $("#promo-message");
+  if(promo == null) {
+    promoMessage.textContent = 'Promotion non trouvée';
+    return null;
+  }
 
   if(promo.nb === 0) {
-      promoMessage.textContent = 'Plus de ' + order.promo.libelle;
+      promoMessage.textContent = 'Plus de ' + promo.libelle;
       return null;
   } else if(order.promo != null) {
     promoMessage.textContent = 'Une promotion est déjà en cours ';
@@ -211,6 +218,7 @@ function displayPromotion (){
     boutton.addEventListener("click", () => {
       order.removePromo();  
       displayPromotion();
+      displayTicket();
     });
 
     $("#pourcent-discount").append(boutton);
@@ -297,7 +305,7 @@ function formatOrderHistory(command) {
 
     text += `──────────────────────────────────\n`;
 
-    const total = formatPrice(command.total).padStart(10);
+    const total = formatPrice(command.totalorder).padStart(10);
 
     text += `TOTAL${total.padStart(29)}`;
 
@@ -307,11 +315,12 @@ function formatOrderHistory(command) {
 function validateCheckout(){
   if(order.customerName === "") {
     customerNameInput.focus();
+    $("#customer-error").textContent = "Veuillez entrer un nom de client";
     return false
   } ;
 
   if(order.lines.length === 0){
-    alert("Encaissement impossible : le ticket est vide !!!");
+    $("#ticket-error").textContent = "Encaissement impossible : le ticket est vide !";
     return false
   } ;
 
@@ -320,10 +329,21 @@ function validateCheckout(){
 
 // sauve hitory
 function saveOrderHistory(){
-  if(order.promo != null) order.promo.nb--;
+  if(order.promo != null) {
+    order.promo.nb--;
+    savePromoStocks();
+    updatePromotionTooltip();
+  }
 
-  const histo = {...order, totalRemise: order.getDiscount() ,totalorder : order.getTotal() };
- 
+  const histo = {
+    customerName: order.customerName,
+    date: order.date,
+    lines: order.lines.map((line) => ({ ...line })),
+    promo: order.promo ? { ...order.promo } : null,
+    totalRemise: order.getDiscount(),
+    totalorder: order.getTotal()
+  };
+
   historique.push(histo);
 
   localStorage.setItem(
@@ -338,7 +358,7 @@ function displayReceipt(){
   $("#recap-promo").innerHTML = "";
   $("#recap-total").innerHTML = "";
 
-  $("#recap-client").textContent = order.customerName;
+  $("#recap-client").textContent = "Ticket de " + order.customerName;
   $("#recap-date").textContent = formatDateHeure(order.date);
 
   const recapLine = $("#recap-lines") ;
@@ -346,7 +366,7 @@ function displayReceipt(){
     const line = createToDOM("li", "ticket-line");
     const linename = createToDOM("span", "line-name", order.lines[i].name );
     const lineqty  = createToDOM("span", "line-qty","x" + order.lines[i].quantity );
-    const linePrice  = createToDOM("span", "line-price",  formatPrice(order.getSubtotal())  );
+    const linePrice  = createToDOM("span", "line-price",  formatPrice(order.lines[i].unitPrice * order.lines[i].quantity)  );
     
     line.append( linename, lineqty, linePrice);
     recapLine.append(line);
@@ -380,8 +400,12 @@ function displayReceipt(){
 function resetCommand(){
   order.clear();
 
+  $("#customer-info").textContent = "";
+  $("#customer-derCommande").textContent = ""; 
+  $("#customer-derinfo").textContent = "";
   customerNameInput.value = "";
   promoCodeInput.value = "";
+  $("#checkout").disabled = false;
 
   displayTicket();
   displayPromotion();
