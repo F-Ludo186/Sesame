@@ -439,14 +439,32 @@ function showCheckoutView() {
 // Premiere partie : le client pose use commande et IA replit le ticket
 // ============================================================
 
-$("#field-row").addEventListener("submit", async function (event) {
+$("#ai-order-form").addEventListener("submit", async function (event) {
   event.preventDefault();
   const input = $("#ai-order-input");
   const message = input.value.trim();
   if (!message) return;
 
-  await sendMessage(message);
+  const response = await sendMessage(message);
+  if(response.items.length === 0) {
+    $("#ai-order-message").textContent = "Aucun produit trouvé pour cette commande.";
+    return;
+  } else {
+    addToOrder(response);
+    displayTicket();
+  }
   input.value = "";
   input.focus();
 });
   
+
+function addToOrder(response) {
+  for (const item of response.items) {
+    const menuItem = menu.find((menuItem) => menuItem.id === item.id);
+    if (menuItem) {
+      for (let i = 0; i < item.quantity; i++) {
+        order.addArticle(menuItem);
+      }
+    }
+  }
+}
