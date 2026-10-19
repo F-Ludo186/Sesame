@@ -25,16 +25,7 @@ properties: {
 }};
 
 const messages = [];
-
-
-async function askModel(message) {
-  const response = await fetch(OLLAMA_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL_NAME,
-      messages: [
-        {
+const pormtsysteme = [{
           role: "system",
           content: `
 Voici le catalogue des produits disponibles.
@@ -49,12 +40,23 @@ Pour chaque produit demandé :
 - Indique la quantité demandée.
 - N'invente aucun identifiant.
 `
-        },
+        }];
+
+async function askModel(message) {
+  const response = await fetch(OLLAMA_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: MODEL_NAME,
+      messages: [
+        ...pormtsysteme,
         ...message
       ],
+      keep_alive: "10m",
       think: false, // pas de brouillon « Thinking… » : la réponse directement
       stream: false, // la réponse en un seul bloc, quand elle est finie
-      format: orderSchema // permet le formatage automatique de la réponse en JSON, et la validation du format
+      format: orderSchema, // permet le formatage automatique de la réponse en JSON, et la validation du format
+      num_predict: 80, // nombre de réponses à générer
     }),
   });
 
