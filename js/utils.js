@@ -11,7 +11,6 @@ function toProperCase(texte) {
     return texte.charAt(0).toUpperCase() + texte.slice(1);
 }
 
-
 function normaliseUpperCase(texte) {
     return texte
         .trim()
@@ -32,4 +31,3 @@ function formatDateHeure(timestamp) {
     return date.toLocaleDateString("fr-FR") + " " +
            date.toLocaleTimeString("fr-FR");
 }
-

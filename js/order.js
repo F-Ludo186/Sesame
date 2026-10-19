@@ -71,5 +71,6 @@ class Order {
         this.customerName = "";
         this.lines = [];
         this.promo = null;
+        this.date = Date.now();
     }
 }
