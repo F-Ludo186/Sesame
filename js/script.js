@@ -429,3 +429,24 @@ function showCheckoutView() {
     $("#view-container").innerHTML = "";
     $("#caisse").classList.remove("hidden");
 }
+
+
+// ============================================================
+// Gestion pour l'IA
+// ============================================================
+
+// ============================================================
+// Premiere partie : le client pose use commande et IA replit le ticket
+// ============================================================
+
+$("#field-row").addEventListener("submit", async function (event) {
+  event.preventDefault();
+  const input = $("#ai-order-input");
+  const message = input.value.trim();
+  if (!message) return;
+
+  await sendMessage(message);
+  input.value = "";
+  input.focus();
+});
+  
