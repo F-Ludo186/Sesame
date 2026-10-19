@@ -324,7 +324,7 @@ function saveOrderHistory(){
 
   const histo = {...order, totalRemise: order.getDiscount() ,totalorder : order.getTotal() };
  
-  historique.push(histo);
+  historique  .push(histo);
 
   localStorage.setItem(
     "historiqueTickets",

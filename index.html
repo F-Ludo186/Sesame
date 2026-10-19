@@ -11,6 +11,7 @@
     href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/ai-Style.css">
 </head>
 
 <body>
@@ -34,13 +35,34 @@
             Promotions
         </button>
     </div>
-
-
   </header>
-
+      
   <main id="caisse" class="register">
-
     <div class="menu-area">
+      
+      <!-- Le comptoir de l'IA : tout le style est prêt, il ne manque que le JavaScript -->
+      <section id="ai-counter" aria-label="L'IA du comptoir">
+
+        <form id="ai-order-form" class="ai-box">
+          <label for="ai-order-input">La commande, comme le client la dit</label>
+          <div class="field-row">
+            <input id="ai-order-input" type="text" autocomplete="off" placeholder="deux cappu et un cookie sésame">
+            <button type="submit">Prendre la commande</button>
+          </div>
+          <p id="ai-order-message" class="ai-message"></p>
+        </form>
+
+        <form id="ai-advice-form" class="ai-box">
+          <label for="ai-advice-input">L'envie du client</label>
+          <div class="field-row">
+            <input id="ai-advice-input" type="text" autocomplete="off" placeholder="un truc doux, sans café">
+            <button type="submit">Conseiller</button>
+          </div>
+          <p id="ai-advice-message" class="ai-message"></p>
+        </form>
+
+      </section>
+
       <nav id="categories" aria-label="Catégories de la carte">
         <button type="button" value="all" class="is-active">Tout</button>
         <button type="button" value="coffee">Cafés</button>
