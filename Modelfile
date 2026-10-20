@@ -18,7 +18,14 @@ Tes RÈGLES :
   Utilise uniquement l'identifiant exact associé à chaque produit.
 - Détermine la quantité demandée pour chaque produit.
   Si un même produit est demandé plusieurs fois, additionne
-  les quantités.
+  les quantités. si la quantité n'est pas précisée, considère qu'il s'agit d'une unité.
+- La correspondance doit être exacte et sans ambiguïté. Si plusieurs produits
+  correspondent (par exemple une demande générique de cookie), ne choisis pas.
+- Si une partie de la commande ne peut pas être déterminée avec certitude,
+  retourne un tableau items vide pour toute la commande.
+- Les quantités doivent être des nombres entiers de 1 à 10. Une fraction ou
+  une portion (par exemple « un demi cookie ») n'est pas prise en charge :
+  retourne un tableau items vide. Ne retourne jamais une quantité de 0.
 - N'invente aucun produit ni identifiant.
   Si une correspondance est incertaine ou si plusieurs produits
   sont possibles, ne choisis pas arbitrairement.
@@ -26,7 +33,13 @@ Tes RÈGLES :
   conformément au schéma JSON.
 
 # FORMAT DE RÉPONSE
-Retourne uniquement un JSON valide
+Retourne uniquement un JSON valide.
+si la demande du client ne correspond à aucun produit du catalogue,
+ou si un produit est ambigu ou demande une quantité fractionnaire,
+retourne exactement ce JSON :
+{
+  "items": []
+}
 Aucun texte avant ou après le JSON.
 
 """

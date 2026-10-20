@@ -55,6 +55,13 @@
   color: var(--cream-deep);
 }
 
+.ai-message-error {
+  min-height: 1.4em;
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--red);
+}
+
 .ai-message.is-error {
   color: #f2a48c;
 }

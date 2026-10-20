@@ -441,11 +441,16 @@ function showCheckoutView() {
 
 $("#ai-order-form").addEventListener("submit", async function (event) {
   event.preventDefault();
+  $("#ai-order-message").textContent = "";
+  $("#ai-order-message-error").textContent = "";
+
   const input = $("#ai-order-input");
   const message = input.value.trim();
   if (!message) return;
 
   const response = await sendMessage(message);
+  if (!response) return;
+
   if(response.items.length === 0) {
     $("#ai-order-message").textContent = "Aucun produit trouvé pour cette commande.";
     return;
@@ -461,10 +466,35 @@ $("#ai-order-form").addEventListener("submit", async function (event) {
 function addToOrder(response) {
   for (const item of response.items) {
     const menuItem = menu.find((menuItem) => menuItem.id === item.id);
-    if (menuItem) {
-      for (let i = 0; i < item.quantity; i++) {
-        order.addArticle(menuItem);
-      }
+
+    if (!menuItem) {
+      $("#ai-order-message-error").textContent = "Produit non trouvé dans le menu.";
+      return;
+    }
+
+    const errorMessage = ctrlResponseItem(menuItem, item);
+    if (errorMessage !== "") {
+      $("#ai-order-message-error").textContent = errorMessage;
+      return;
     }
   }
+
+  for (const item of response.items) {
+    const menuItem = menu.find((menuItem) => menuItem.id === item.id);
+    for (let i = 0; i < item.quantity; i++) {
+      order.addArticle(menuItem);
+    }
+  }
+}
+
+
+function ctrlResponseItem(Menuitem, item) {
+  if (!Menuitem.available) {
+    return "Le produit " + Menuitem.name + " est épuisé.";
+  }
+  if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 10) {
+    return "La quantité demandée pour le produit " + Menuitem.name + " doit être un nombre entier compris entre 1 et 10.";
+  }
+
+  return "";
 }

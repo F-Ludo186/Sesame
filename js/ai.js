@@ -9,30 +9,52 @@ const orderPrompt = menu
     .map((item) => `ID=${item.id} | PRODUIT=${item.name}`)
     .join("\n");
 
-// Shema de validation de la reponse de Ollama. 
+// Schema de validation de la reponse de Ollama.
 const orderSchema = {
-properties: {
-    items: {
-        type: "array",
+    type: "object",
+    properties: {
         items: {
-            type: "object",
-            properties: {
-                id: { type: "integer" },
-                quantity: { type: "integer" }
-            },
-            required: ["id", "quantity"],
-            additionalProperties: false
+            type: "array",
+            items: {
+                type: "object",
+                properties: {
+                    id: { type: "integer" },
+                    quantity: { type: "integer", minimum: 1, maximum: 10 }
+                },
+                required: ["id", "quantity"],
+                additionalProperties: false
+            }
         }
-    }
-}};
+    },
+    required: ["items"],
+    additionalProperties: false
+};
 
-//Instruction et tableau des produit pour Ollama a chaque requete. 
+// Instructions et catalogue transmis a Ollama a chaque requete.
 const pormtsysteme = [{
     role: "system",
     content: `
+Tu analyses une commande pour retrouver des produits du catalogue.
 Voici le catalogue des produits disponibles.
 Format : ID | PRODUIT
-${orderPrompt}`
+${orderPrompt}
+
+Regles :
+- Utilise uniquement un produit du catalogue et son identifiant exact.
+- Le produit demande doit correspondre sans ambiguite a un seul produit.
+- Si plusieurs produits peuvent correspondre (par exemple "un cookie"
+  quand plusieurs cookies existent), ne choisis pas arbitrairement.
+- Si une partie de la commande est ambigue, inconnue ou impossible a satisfaire,
+  retourne items vide pour toute la commande.
+- Les quantites doivent etre des nombres entiers compris entre 1 et 10.
+- Une fraction ou une portion (par exemple "un demi cookie") n'est pas une
+  quantite valide : retourne items vide. Ne retourne jamais une quantite de 0.
+- Si la quantite n'est pas precisee, utilise 1. Additionne les demandes
+  repetees du meme produit.
+
+Retourne uniquement un JSON conforme au schema. Si aucun produit ne peut etre
+determine avec certitude, retourne exactement {"items": []}.
+`
  }];
 
 
@@ -66,7 +88,7 @@ async function askModel(text) {
             format: orderSchema, // permet le formatage automatique de la réponse en JSON, et la validation du format
             options: {
                 temperature: 0,
-                num_predict: 60 // limite le nombre de token en sortie pour éviter les réponses trop longues
+                num_predict: -1 // limite le nombre de token en sortie pour éviter les réponses trop longues
             } 
         }),
     });
@@ -107,6 +129,7 @@ async function sendMessage(text) {
 
     const debut = Date.now();
     let timer;
+    let erreur = "";
 
     bouton.disabled = true;
     message.textContent = "Analyse en cours… 0 s";
@@ -119,13 +142,17 @@ async function sendMessage(text) {
     try {
         const resultat = await askModel(text);
         
-        entreeHistorique.reponse = JSON.parse(resultat) ;
+        const reponse = JSON.parse(resultat);
+        entreeHistorique.reponse = isValidOrderResponse(reponse)
+            ? reponse
+            : { items: [] };
         entreeHistorique.tempsIA = (Date.now() - debut) / 1000;
 
         message.textContent = "Création du ticket…";
         return  entreeHistorique.reponse ;
     } catch (error) {
-        message.textContent = `Erreur : ${error.message}`;
+        erreur = `Erreur : ${error.message}`;
+        message.textContent = erreur;
         return null;
     
     } finally {
@@ -140,9 +167,26 @@ async function sendMessage(text) {
                 error
             );
         }
-        message.textContent = `Analyse terminée en ${Math.round((Date.now() - debut) / 1000)} s`;
+        if (!erreur) {
+            message.textContent = `Analyse terminée en ${Math.round((Date.now() - debut) / 1000)} s`;
+        }
         bouton.disabled = false;
     }
+}
+
+function isValidOrderResponse(response) {
+    return response !== null
+        && typeof response === "object"
+        && Array.isArray(response.items)
+        && response.items.every((item) =>
+            item !== null
+            && typeof item === "object"
+            && Number.isInteger(item.id)
+            && menu.some((menuItem) => menuItem.id === item.id)
+            && Number.isInteger(item.quantity)
+            && item.quantity >= 1
+            && item.quantity <= 10
+        );
 }
 
 
