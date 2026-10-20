@@ -2,101 +2,163 @@
 
 const MODEL_NAME = "sesam-order";
 const OLLAMA_URL = "http://localhost:11434/api/chat";
+const CLE_HISTORIQUE_IA = "historiqueIA";
 
-/*const orderPrompt = menu.map((item) => `${item.id} : ${item.name}`).join("\n");*/
+// Catalogue a trasmettre a Ollama.
 const orderPrompt = menu
-  .map((item) => `ID=${item.id} | PRODUIT=${item.name}`)
-  .join("\n");
+    .map((item) => `ID=${item.id} | PRODUIT=${item.name}`)
+    .join("\n");
 
+// Shema de validation de la reponse de Ollama. 
 const orderSchema = {
 properties: {
-  items: {
-    type: "array",
     items: {
-      type: "object",
-      properties: {
-        id: { type: "integer" },
-        quantity: { type: "integer" }
-      },
-      required: ["id", "quantity"],
-      additionalProperties: false
+        type: "array",
+        items: {
+            type: "object",
+            properties: {
+                id: { type: "integer" },
+                quantity: { type: "integer" }
+            },
+            required: ["id", "quantity"],
+            additionalProperties: false
+        }
     }
-  }
 }};
 
-const messages = [];
+//Instruction et tableau des produit pour Ollama a chaque requete. 
 const pormtsysteme = [{
-          role: "system",
-          content: `
+    role: "system",
+    content: `
 Voici le catalogue des produits disponibles.
-
 Format : ID | PRODUIT
+${orderPrompt}`
+ }];
 
-${orderPrompt}
 
-Pour chaque produit demandé :
-- Recherche la correspondance dans le catalogue.
-- Retourne l'identifiant exact du produit.
-- Indique la quantité demandée.
-- N'invente aucun identifiant.
-`
-        }];
+// ============================================================
+// HISTORIQUE pour l'IA
+// ============================================================
 
-async function askModel(message) {
-  const response = await fetch(OLLAMA_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL_NAME,
-      messages: [
-        ...pormtsysteme,
-        ...message
-      ],
-      keep_alive: "10m",
-      think: false, // pas de brouillon « Thinking… » : la réponse directement
-      stream: false, // la réponse en un seul bloc, quand elle est finie
-      format: orderSchema, // permet le formatage automatique de la réponse en JSON, et la validation du format
-      num_predict: 80, // nombre de réponses à générer
-    }),
-  });
+// Historique IA en localStorage
+const historiqueIA = JSON.parse( localStorage.getItem(CLE_HISTORIQUE_IA) || "[]");
+// Save l'historique dans le navigateur
+function sauvegarderHistoriqueIA() { 
+    localStorage.setItem(CLE_HISTORIQUE_IA, JSON.stringify(historiqueIA));
+}
+ 
+async function askModel(text) {
+    const response = await fetch(OLLAMA_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            model: MODEL_NAME,
+            messages: [
+                ...pormtsysteme, // permet de fournir le catalogue des produits au modèle
+                {
+                    role: "user",
+                    content: text
+                }
+            ],
+            keep_alive: "10m",
+            think: false, // pas de brouillon « Thinking… » : la réponse directement
+            stream: false, // la réponse en un seul bloc, quand elle est finie
+            format: orderSchema, // permet le formatage automatique de la réponse en JSON, et la validation du format
+            options: {
+                temperature: 0,
+                num_predict: 60 // limite le nombre de token en sortie pour éviter les réponses trop longues
+            } 
+        }),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
+/*    console.table({
+        total: (data.total_duration / 1e9).toFixed(2) + " s",
+        chargement: (data.load_duration / 1e9).toFixed(2) + " s",
+        analyse: (data.prompt_eval_duration / 1e9).toFixed(2) + " s",
+        generation: (data.eval_duration / 1e9).toFixed(2) + " s",
+        tokensEntree: data.prompt_eval_count,
+        tokensSortie: data.eval_count
+    });     // control temps reponse et tokens pour debug
+    */ 
 
-  // response.ok vaut false si Ollama a répondu par une erreur (modèle introuvable...)
-  if (!response.ok) {
-    throw new Error(data.error);
-  }
-  return data.message.content;
+    // response.ok vaut false si Ollama a répondu par une erreur (modèle introuvable...)
+    if (!response.ok) {
+        throw new Error(data.error);
+    }
+    return data.message.content; // le texte de la réponse du modèle
 }
 
 async function sendMessage(text) {
     if (!text.trim()) {
         return;
     }
-    let answer = {};
     
-    messages.push({ role: "user", content: text });
+    const bouton = $("#ai-order-button");
+    const message = $("#ai-order-message");
+    
+    // Historique IA pour chaque appel
+    const entreeHistorique = {
+        date: new Date().toISOString(),
+        texteClient: text,
+        reponse: "",
+        tempsIA: 0
+    };
 
-    $("#ai-order-button").disabled = true;
-    const thinking = $("#ai-order-message");
-    thinking.textContent = "Analyse en cours… 0 s";
-    const start = Date.now();
-    const timer = setInterval(() => {
-        const seconds = Math.round((Date.now() - start) / 1000);
-        thinking.textContent = `Analyse en cours… ${seconds} s`;
+    const debut = Date.now();
+    let timer;
+
+    bouton.disabled = true;
+    message.textContent = "Analyse en cours… 0 s";
+
+    timer = setInterval(() => {
+        const secondes = Math.floor((Date.now() - debut) / 1000);
+        message.textContent = `Analyse en cours… ${secondes} s`;
     }, 1000);
 
     try {
-        answer = await askModel(messages);
-        messages.push({ role: "assistant", content: answer });
-        thinking.textContent = `Création du ticket`;
-    } catch (error) {
-        thinking.textContent = `Oups : ${error.message} (le détail est dans la console, F12)`;
-        console.error(error);
-    }
+        const resultat = await askModel(text);
+        
+        entreeHistorique.reponse = JSON.parse(resultat) ;
+        entreeHistorique.tempsIA = (Date.now() - debut) / 1000;
 
-    clearInterval(timer);
-    thinking.textContent = `Analyse terminée en ${Math.round((Date.now() - start) / 1000)} s`;
-    $("#ai-order-button").disabled = false;
-    return JSON.parse(answer); 
+        message.textContent = "Création du ticket…";
+        return  entreeHistorique.reponse ;
+    } catch (error) {
+        message.textContent = `Erreur : ${error.message}`;
+        return null;
+    
+    } finally {
+
+        clearInterval(timer);
+        historiqueIA.push(entreeHistorique);
+        try {
+            sauvegarderHistoriqueIA();
+        } catch (error) {
+            console.error(
+                "Impossible de sauvegarder l'historique IA :",
+                error
+            );
+        }
+        message.textContent = `Analyse terminée en ${Math.round((Date.now() - debut) / 1000)} s`;
+        bouton.disabled = false;
+    }
 }
+
+
+
+
+
+
+
+/*  prevoir affichage histo IA
+console.table(
+    historiqueIA.map((entree) => ({
+        date: entree.date,
+        requete: entree.requete,
+        dureeSecondes: (
+            entree.dureeTotaleMs / 1000
+        ).toFixed(2),
+        erreur: entree.erreur
+    }))
+);*/
