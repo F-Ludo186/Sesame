@@ -451,7 +451,7 @@ $("#ai-order-form").addEventListener("submit", async function (event) {
   const response = await sendMessage(message);
   if (!response) return;
 
-  if(response.items.length === 0) {
+  if(response.lines.length === 0) {
     $("#ai-order-message").textContent = "Aucun produit trouvé pour cette commande.";
     return;
   } else {
@@ -464,7 +464,7 @@ $("#ai-order-form").addEventListener("submit", async function (event) {
   
 
 function addToOrder(response) {
-  for (const item of response.items) {
+  for (const item of response.lines) {
     const menuItem = menu.find((menuItem) => menuItem.id === item.id);
 
     if (!menuItem) {
@@ -479,7 +479,7 @@ function addToOrder(response) {
     }
   }
 
-  for (const item of response.items) {
+  for (const item of response.lines) {
     const menuItem = menu.find((menuItem) => menuItem.id === item.id);
     for (let i = 0; i < item.quantity; i++) {
       order.addArticle(menuItem);

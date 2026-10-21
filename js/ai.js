@@ -4,16 +4,22 @@ const MODEL_NAME = "sesam-order";
 const OLLAMA_URL = "http://localhost:11434/api/chat";
 const CLE_HISTORIQUE_IA = "historiqueIA";
 
-// Catalogue a trasmettre a Ollama.
-const orderPrompt = menu
-    .map((item) => `ID=${item.id} | PRODUIT=${item.name}`)
-    .join("\n");
+// Prompt systeme et catalogue transmis a Ollama.
+const orderPrompt = `Tu prends les commandes du cafe Sesame.
+Associe chaque produit demande a son id exact dans la carte ci-dessous.
+Pour chaque produit, indique son id et sa quantite.
+La correspondance doit etre sans ambiguite. 
+N'invente ni produit ni identifiant et ne retourne jamais une quantite de 0.
+Retourne uniquement un JSON conforme au schema.
+
+Carte :
+${JSON.stringify(menu.map(({ id, name }) => ({ id, name })), null, 2)}`;
 
 // Schema de validation de la reponse de Ollama.
 const orderSchema = {
     type: "object",
     properties: {
-        items: {
+        lines: {
             type: "array",
             items: {
                 type: "object",
@@ -26,36 +32,15 @@ const orderSchema = {
             }
         }
     },
-    required: ["items"],
+    required: ["lines"],
     additionalProperties: false
 };
 
 // Instructions et catalogue transmis a Ollama a chaque requete.
-const pormtsysteme = [{
+const orderSystemMessage = {
     role: "system",
-    content: `
-Tu analyses une commande pour retrouver des produits du catalogue.
-Voici le catalogue des produits disponibles.
-Format : ID | PRODUIT
-${orderPrompt}
-
-Regles :
-- Utilise uniquement un produit du catalogue et son identifiant exact.
-- Le produit demande doit correspondre sans ambiguite a un seul produit.
-- Si plusieurs produits peuvent correspondre (par exemple "un cookie"
-  quand plusieurs cookies existent), ne choisis pas arbitrairement.
-- Si une partie de la commande est ambigue, inconnue ou impossible a satisfaire,
-  retourne items vide pour toute la commande.
-- Les quantites doivent etre des nombres entiers compris entre 1 et 10.
-- Une fraction ou une portion (par exemple "un demi cookie") n'est pas une
-  quantite valide : retourne items vide. Ne retourne jamais une quantite de 0.
-- Si la quantite n'est pas precisee, utilise 1. Additionne les demandes
-  repetees du meme produit.
-
-Retourne uniquement un JSON conforme au schema. Si aucun produit ne peut etre
-determine avec certitude, retourne exactement {"items": []}.
-`
- }];
+    content: orderPrompt
+};
 
 
 // ============================================================
@@ -69,46 +54,37 @@ function sauvegarderHistoriqueIA() {
     localStorage.setItem(CLE_HISTORIQUE_IA, JSON.stringify(historiqueIA));
 }
  
-async function askModel(text) {
+async function askModel(messages, format) {
+    const body = {
+        model: MODEL_NAME,
+        messages,
+        keep_alive: "10m",
+        think: false,
+        stream: false,
+        options: {
+            temperature: 0,
+            num_predict: -1
+        }
+    };
+    if (format) {
+        body.format = format;
+    }
+
     const response = await fetch(OLLAMA_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            model: MODEL_NAME,
-            messages: [
-                ...pormtsysteme, // permet de fournir le catalogue des produits au modèle
-                {
-                    role: "user",
-                    content: text
-                }
-            ],
-            keep_alive: "10m",
-            think: false, // pas de brouillon « Thinking… » : la réponse directement
-            stream: false, // la réponse en un seul bloc, quand elle est finie
-            format: orderSchema, // permet le formatage automatique de la réponse en JSON, et la validation du format
-            options: {
-                temperature: 0,
-                num_predict: -1 // limite le nombre de token en sortie pour éviter les réponses trop longues
-            } 
-        }),
+        body: JSON.stringify(body)
     });
 
     const data = await response.json();
-/*    console.table({
-        total: (data.total_duration / 1e9).toFixed(2) + " s",
-        chargement: (data.load_duration / 1e9).toFixed(2) + " s",
-        analyse: (data.prompt_eval_duration / 1e9).toFixed(2) + " s",
-        generation: (data.eval_duration / 1e9).toFixed(2) + " s",
-        tokensEntree: data.prompt_eval_count,
-        tokensSortie: data.eval_count
-    });     // control temps reponse et tokens pour debug
-    */ 
-
     // response.ok vaut false si Ollama a répondu par une erreur (modèle introuvable...)
     if (!response.ok) {
         throw new Error(data.error);
     }
-    return data.message.content; // le texte de la réponse du modèle
+    if (typeof data.message?.content !== "string") {
+        throw new Error("Ollama a renvoye une reponse vide ou invalide.");
+    }
+    return data.message.content;
 }
 
 async function sendMessage(text) {
@@ -132,20 +108,23 @@ async function sendMessage(text) {
     let erreur = "";
 
     bouton.disabled = true;
-    message.textContent = "Analyse en cours… 0 s";
+    message.textContent = "Qwen prend la commande… 0 s";
 
     timer = setInterval(() => {
         const secondes = Math.floor((Date.now() - debut) / 1000);
-        message.textContent = `Analyse en cours… ${secondes} s`;
+        message.textContent = `Qwen prend la commande… ${secondes} s`;
     }, 1000);
 
     try {
-        const resultat = await askModel(text);
+        const resultat = await askModel([
+            orderSystemMessage,
+            { role: "user", content: text }
+        ], orderSchema);
         
         const reponse = JSON.parse(resultat);
         entreeHistorique.reponse = isValidOrderResponse(reponse)
             ? reponse
-            : { items: [] };
+            : { lines: [] };
         entreeHistorique.tempsIA = (Date.now() - debut) / 1000;
 
         message.textContent = "Création du ticket…";
@@ -177,8 +156,8 @@ async function sendMessage(text) {
 function isValidOrderResponse(response) {
     return response !== null
         && typeof response === "object"
-        && Array.isArray(response.items)
-        && response.items.every((item) =>
+        && Array.isArray(response.lines)
+        && response.lines.every((item) =>
             item !== null
             && typeof item === "object"
             && Number.isInteger(item.id)
