@@ -8,6 +8,8 @@ const customerNameInput = $("#customer-name");
 const historique = JSON.parse(
     localStorage.getItem("historiqueTickets") || "[]"
 );
+let menuAdvice = [];
+let filteredMenu = "all";
 
 updatePromotionTooltip();
 displayMenu(menu);
@@ -46,7 +48,8 @@ function initMenuEvents(){
       });
 
       item.classList.add("is-active");
-      displayMenu(getFilteredMenu(item.value));
+      filteredMenu = item.value ? item.value : "all";
+      displayMenu(getFilteredMenu(filteredMenu));
   });
 }
 
@@ -63,7 +66,8 @@ function initPromotionEvents(){
 function initCustomerEvents(){
   $("#customer-form").addEventListener( 'submit' , function(event) {
     event.preventDefault();
-    setCustomer();
+    
+    setCustomer(customerNameInput.value);
     displayCustomerHistory();
   });
 }
@@ -108,25 +112,32 @@ function getFilteredMenu(value){
   return menu.filter((p)=> p.category === value).sort((a, b) => b.available - a.available);
 }
 
-function displayMenu(menufiltered){
+function displayMenu(menufiltered) {
   const menuSection = $("#menu");
   menuSection.innerHTML = "";
-  const menuAviable = menufiltered.filter((menu) => menu.available).sort((a,b)=> a.name.localeCompare(b.name));
-  const menuSoldeout = menufiltered.filter((menu) => !menu.available).sort((a,b)=> a.name.localeCompare(b.name));
+  
+  //menuAdvice 
+  const menuAviable = menufiltered.filter((menu) => menu.available && !menuAdvice.includes(menu.id)).sort((a,b)=> a.name.localeCompare(b.name));
+  const menuSoldeout = menufiltered.filter((menu) => !menu.available && !menuAdvice.includes(menu.id)).sort((a,b)=> a.name.localeCompare(b.name));
 
-  menuSection.appendChild(createSectionSeparator("Disponible"));
-
-  for(let i= 0 ; i< menuAviable.length ; i++){
-    const article = createMenuItem(menuAviable[i], "" );
-    menuSection.append(article);
+  if(menuAdvice.length >= 1) {
+    const menuAdviceItems = menufiltered.filter((menu) => menuAdvice.includes(menu.id)).sort((a,b)=> a.name.localeCompare(b.name));
+    createProductCard(menuSection, "Conseillé", menuAdviceItems, "is-suggested");
   }
-  if(menuSoldeout.length >= 1) {
-    menuSection.appendChild(createSectionSeparator("Epuisé"));
 
-    for(let i= 0 ; i< menuSoldeout.length ; i++){
-      const article = createMenuItem(menuSoldeout[i], "is-sold-out");
-      menuSection.append(article);
-    }
+  createProductCard(menuSection, "Disponible", menuAviable);
+  
+  if(menuSoldeout.length >= 1) {
+    createProductCard(menuSection, "Epuisé", menuSoldeout,"is-sold-out");
+  }
+}
+
+function createProductCard(section, titre, menu, classe = "") {
+  section.appendChild(createSectionSeparator(titre));
+
+  for(let i= 0 ; i< menu.length ; i++){
+    const article = createMenuItem(menu[i], classe );
+    section.append(article);
   }
 }
 
@@ -228,6 +239,7 @@ function displayPromotion (){
 }
 
 function clearCustomer(){
+  $("#ticket-title").textContent = "Ticket";
   $("#customer-info").textContent= "";
   $("#customer-derCommande").textContent= "";
   $("#customer-derinfo").textContent= "";
@@ -235,13 +247,13 @@ function clearCustomer(){
 }
 
 // customer
-function setCustomer(){
+function setCustomer(customerName){
   clearCustomer()
   
-  if(customerNameInput.value === "") return null;
+  if(customerName === "") return null;
 
-  order.customerName = normaliseUpperCase(customerNameInput.value);
-  
+  order.customerName = normaliseUpperCase(customerName);
+  $("#ticket-title").textContent = `Ticket de ${order.customerName}`; 
   $("#customer-info").textContent = order.customerName;
 
   const span = createToDOM("span", "" );
@@ -464,6 +476,11 @@ $("#ai-order-form").addEventListener("submit", async function (event) {
   
 
 function addToOrder(response) {
+  if(response.prenom) {
+    setCustomer(normaliseUpperCase(response.prenom));
+    displayCustomerHistory();
+  }
+  
   for (const item of response.lines) {
     const menuItem = menu.find((menuItem) => menuItem.id === item.id);
 
@@ -498,3 +515,32 @@ function ctrlResponseItem(Menuitem, item) {
 
   return "";
 }
+
+// ============================================================
+// 2eme partie : le client pose demande conseil au barista et l'IA repond
+// ============================================================
+
+$("#ai-advice-form").addEventListener("submit", async function (event) {
+  event.preventDefault();
+  $("#ai-advice-message").textContent = "";
+  
+  const input = $("#ai-advice-input");
+  const message = input.value.trim();
+  if (!message) return;
+
+  const response = await sendAdvice(message);
+  if (!response) return;
+
+  if(response.lines.length === 0) {
+    $("#ai-advice-message").textContent = "Aucun produit trouvé pour cette demande.";
+    return;
+  } else {
+    // faire un affichage des menu avec en premier les menu conseillé
+    menuAdvice = response.lines.map(item => item.id);
+    message.textContent = response.phrase || "Voici les produits que je vous conseille.";
+    displayMenu(getFilteredMenu(filteredMenu));
+
+  }
+  input.value = "";
+  input.focus();
+});
