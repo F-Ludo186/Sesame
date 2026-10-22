@@ -1,67 +1,72 @@
-  <link rel="stylesheet" href="css/historique.css">
+<link rel="stylesheet" href="css/historique.css">
 
-<section id="historique-panel">
-        
-    <div class="history-heading">
-        <button id="btn-retour-caisse" class="btn-retour" type="button">
-            ← Retour
-        </button>
+<section id="historique-panel" class="order-history-page" aria-labelledby="order-history-title">
+  <div class="history-heading">
+    <button id="btn-retour-caisse" class="btn-retour" type="button">← Retour</button>
+    <header>
+      <h2 id="order-history-title">Historique des commandes</h2>
+      <p>Retrouve les tickets encaissés et consulte leur détail.</p>
+    </header>
+  </div>
 
-        <header>
-            <h2>Historique des commandes</h2>
-            <p>Retrouve et consulte les commandes enregistrées.</p>
-        </header>
+  <section class="order-history-card" aria-label="Filtres de l'historique des commandes">
+    <form id="history-filters" class="order-history-filters">
+      <label class="order-history-search">
+        <span>Rechercher une commande</span>
+        <span class="order-history-search-control">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input id="history-search" type="search" placeholder="Client, article ou code promo…" autocomplete="off">
+        </span>
+      </label>
+
+      <div class="order-history-filter-row">
+        <label>
+          <span>Du</span>
+          <input id="history-from" type="date">
+        </label>
+        <label>
+          <span>Au</span>
+          <input id="history-to" type="date">
+        </label>
+        <label>
+          <span>Promotions</span>
+          <select id="history-promo-filter">
+            <option value="all">Toutes les commandes</option>
+            <option value="with-promo">Avec promotion</option>
+            <option value="without-promo">Sans promotion</option>
+          </select>
+        </label>
+        <label>
+          <span>Ordre</span>
+          <select id="history-sort">
+            <option value="newest">Plus récentes</option>
+            <option value="oldest">Plus anciennes</option>
+          </select>
+        </label>
+      </div>
+    </form>
+  </section>
+
+  <section class="order-history-card order-history-results" aria-label="Résultats de l'historique">
+    <div class="order-history-results-heading">
+      <h3>Tickets encaissés</h3>
+      <span id="history-count" class="order-history-count">0 commande</span>
     </div>
-
-    <!-- Recherche et filtres -->
-    <div id="history-filters">
-        <span class="search-icon" aria-hidden="true">🔍</span>
-        <input
-            id="client-filter"
-            type="text"
-            placeholder="Rechercher un client..."
-            autocomplete="off"
-            list="clients-list"
-        >
-
-        <datalist id="clients-list"></datalist>
-        
-        <button id="history-search-button" type="button">
-            Rechercher
-        </button>
+    <div class="order-history-table-wrap">
+      <table id="history-table" class="order-history-table">
+        <thead>
+          <tr>
+            <th scope="col">Date</th>
+            <th scope="col">Client</th>
+            <th scope="col">Articles</th>
+            <th scope="col">Promotion</th>
+            <th scope="col">Total</th>
+            <th scope="col"><span class="visually-hidden">Détail du ticket</span></th>
+          </tr>
+        </thead>
+        <tbody id="history-table-body"></tbody>
+      </table>
+      <p id="history-empty" class="order-history-empty" hidden>Aucune commande ne correspond aux filtres.</p>
     </div>
-
-     <!-- Tableau -->
-    <div id="history-table-container">
-        <table id="history-table">
-
-            <thead>
-                <tr>
-                    <th scope="col">Date</th>
-                    <th scope="col">Client</th>
-                    <th scope="col">Total</th>
-                    <th scope="col">Détail</th>
-                </tr>
-            </thead>
-
-            <tbody id="history-table-body">
-                <!-- Les lignes seront générées en JavaScript -->
-            </tbody>
-    
-        </table>
-    </div>
-
-     <!-- Pagination -->
-    <nav id="history-pagination" aria-label="Pagination de l'historique">
-        <button id="history-previous" type="button">
-            Précédent
-        </button>
-
-        <span id="history-page">Page 1</span>
-
-        <button id="history-next" type="button">
-            Suivant
-        </button>
-    </nav>
-    
+  </section>
 </section>

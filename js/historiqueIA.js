@@ -1,95 +1,213 @@
-const DATA_KEY_Commande = "historiqueIA";
-const DATA_KEY_Advice = "historiqueAdvice";
+const ORDER_AI_HISTORY_KEY = "historiqueIA";
+const ADVICE_AI_HISTORY_KEY = "historiqueAdvice";
 
-const filtre = $("#historique-filtres");
+function InitHistoryIA() {
+  const orderEntries = readAIHistory(ORDER_AI_HISTORY_KEY);
+  const adviceEntries = readAIHistory(ADVICE_AI_HISTORY_KEY);
 
-function InitHistory(){
-    InitEvent();
-    initFilter();
-    createRow(historique);
+  bindAIHistoryFilters("order", orderEntries, renderOrderAIHistory);
+  bindAIHistoryFilters("advice", adviceEntries, renderAdviceAIHistory);
 }
 
-function InitEvent(){
-    $("#history-search-button").addEventListener("click", () => {
-      const value = normaliseUpperCase($("#client-filter").value);
-        createRow(getHistoryfiltered(value));
-        $("#client-filter").value = "";
+function readAIHistory(key) {
+  try {
+    const entries = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(entries)
+      ? entries.filter(entry => entry && typeof entry === "object")
+      : [];
+  } catch (error) {
+    console.error(`Impossible de lire l'historique ${key} :`, error);
+    return [];
+  }
+}
+
+function bindAIHistoryFilters(prefix, entries, render) {
+  const form = document.querySelector(`#${prefix}-history-filters`);
+  const search = document.querySelector(`#${prefix}-history-search`);
+  const from = document.querySelector(`#${prefix}-history-from`);
+  const to = document.querySelector(`#${prefix}-history-to`);
+  const status = document.querySelector(`#${prefix}-history-status`);
+
+  form.addEventListener("submit", event => event.preventDefault());
+
+  const update = () => render(filterAIHistory(entries, prefix));
+  search.addEventListener("input", update);
+  from.addEventListener("input", update);
+  to.addEventListener("input", update);
+  status.addEventListener("change", update);
+  update();
+}
+
+function filterAIHistory(entries, prefix) {
+  const search = normalizeAIHistoryText(
+    document.querySelector(`#${prefix}-history-search`).value
+  );
+  const from = document.querySelector(`#${prefix}-history-from`).value;
+  const to = document.querySelector(`#${prefix}-history-to`).value;
+  const status = document.querySelector(`#${prefix}-history-status`).value;
+
+  return [...entries]
+    .filter(entry => {
+      const response = getAIHistoryResponse(entry);
+      const hasResult = getAIHistoryLines(response).length > 0;
+      const date = getAIHistoryDateKey(entry.date);
+      const searchable = getAIHistorySearchText(entry, response, prefix);
+
+      if (search && !normalizeAIHistoryText(searchable).includes(search)) return false;
+      if (from && (!date || date < from)) return false;
+      if (to && (!date || date > to)) return false;
+      if (status === "success" && !hasResult) return false;
+      if (status === "error" && hasResult) return false;
+      return true;
+    })
+    .sort((a, b) => getAIHistoryTimestamp(b.date) - getAIHistoryTimestamp(a.date));
+}
+
+function getAIHistoryResponse(entry) {
+  if (entry?.reponse && typeof entry.reponse === "object") return entry.reponse;
+  if (typeof entry?.reponse === "string") {
+    try {
+      return JSON.parse(entry.reponse);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function getAIHistoryLines(response) {
+  return Array.isArray(response?.lines)
+    ? response.lines.filter(line => line && typeof line === "object")
+    : [];
+}
+
+function getAIHistorySearchText(entry, response, prefix) {
+  const products = getAIHistoryLines(response)
+    .map(line => menu.find(product => product.id === line.id)?.name || "")
+    .join(" ");
+
+  if (prefix === "advice") {
+    return [entry.texteClient, response?.prenom, response?.phrase, products].join(" ");
+  }
+  return [entry.texteClient, response?.prenom, products].join(" ");
+}
+
+function renderOrderAIHistory(entries) {
+  const body = document.querySelector("#order-history-body");
+  body.replaceChildren();
+
+  entries.forEach(entry => {
+    const response = getAIHistoryResponse(entry);
+    const row = document.createElement("tr");
+    appendAIHistoryCell(row, formatAIHistoryDate(entry.date));
+    appendAIHistoryCell(row, entry.texteClient || "—");
+
+    const result = document.createElement("td");
+    const lines = getAIHistoryLines(response);
+    if (lines.length > 0) {
+      const list = document.createElement("ul");
+      lines.forEach(line => {
+        const product = menu.find(item => item.id === line.id);
+        const item = document.createElement("li");
+        const quantity = Number.isInteger(line.quantity) ? ` × ${line.quantity}` : "";
+        item.textContent = `${product?.name || `Produit #${line.id ?? "?"}`}${quantity}`;
+        list.append(item);
+      });
+      result.append(list);
+      if (response?.prenom) appendAIHistoryNote(result, `Prénom : ${response.prenom}`);
+    } else {
+      result.textContent = "Aucun produit reconnu";
+      result.classList.add("is-empty-result");
+    }
+    appendAIHistoryNote(result, formatAIHistoryDuration(entry.tempsIA));
+    row.append(result);
+    body.append(row);
   });
 
+  updateAIHistorySummary("order", entries.length);
 }
 
-function initFilter(){
-   
-    const clients = [...new Set(
-    historique
-        .map((commande) => commande.customerName)
-    )]
-    .sort((a, b) => a.localeCompare(b));
+function renderAdviceAIHistory(entries) {
+  const body = document.querySelector("#advice-history-body");
+  body.replaceChildren();
 
-    clients.unshift("TOUS");
-    
-    const liste = $("#clients-list");
+  entries.forEach(entry => {
+    const response = getAIHistoryResponse(entry);
+    const row = document.createElement("tr");
+    appendAIHistoryCell(row, formatAIHistoryDate(entry.date));
 
-    for (const client of clients) {
-        const option = document.createElement("option");
-        option.value = client;
-        liste.append(option);
+    const suggestion = document.createElement("td");
+    appendAIHistoryNote(suggestion, `Envie : ${entry.texteClient || "—"}`);
+    const lines = getAIHistoryLines(response);
+    if (lines.length > 0) {
+      const list = document.createElement("ul");
+      lines.forEach(line => {
+        const product = menu.find(item => item.id === line.id);
+        const item = document.createElement("li");
+        item.textContent = product?.name || `Produit #${line.id ?? "?"}`;
+        list.append(item);
+      });
+      suggestion.append(list);
+      if (response?.phrase) appendAIHistoryNote(suggestion, response.phrase);
+    } else {
+      appendAIHistoryNote(suggestion, "Aucune suggestion enregistrée", true);
     }
+    appendAIHistoryNote(suggestion, formatAIHistoryDuration(entry.tempsIA));
+    row.append(suggestion);
+    appendAIHistoryCell(row, response?.prenom || "—");
+    body.append(row);
+  });
+
+  updateAIHistorySummary("advice", entries.length);
 }
 
-function getHistoryfiltered(value){
-  if (value === "TOUS" || value === "") return historique;
-  return historique.filter((commande)=> commande.customerName === value).sort((a, b) => b.date - a.date);
+function appendAIHistoryCell(row, text) {
+  const cell = document.createElement("td");
+  cell.textContent = text;
+  row.append(cell);
 }
 
-function createRow(histoFiltered){
-    const tableBody = $("#history-table-body")
-    tableBody.innerHTML = "";
-
-    for(let i=0 ; i < histoFiltered.length ; i++){
-        const line = createHistoryRow(histoFiltered[i])
-        tableBody.append(line);
-    }
+function appendAIHistoryNote(parent, text, muted = false) {
+  const note = document.createElement("p");
+  note.className = muted ? "ai-history-note is-muted" : "ai-history-note";
+  note.textContent = text;
+  parent.append(note);
 }
 
-
-function createHistoryRow(commande) {
-    const row = createToDOM("tr","");
-    const dateCell = createToDOM("td","",formatDateHeure(commande.date));
-    const customerCell = createToDOM("td","",commande.customerName);
-    const totalCell = createToDOM("td","",formatPrice(commande.totalorder));
-    const detailCell = createToDOM("td","");
-    const button = createToDOM("button","","Voir","button");
-    detailCell.append(button);
-
-    row.append(dateCell, customerCell, totalCell, detailCell);
-
-    return row;
+function updateAIHistorySummary(prefix, count) {
+  document.querySelector(`#${prefix}-history-count`).textContent =
+    `${count} résultat${count === 1 ? "" : "s"}`;
+  document.querySelector(`#${prefix}-history-empty`).hidden = count !== 0;
 }
 
-
-// auto complet pour client
-async function initAutocompletion() {
-    noms = await lireData() ?? await createFile();
+function formatAIHistoryDate(value) {
+  const timestamp = getAIHistoryTimestamp(value);
+  return timestamp === null ? "Date inconnue" : formatDateHeure(timestamp);
 }
 
-function lireData() {
-    try {
-        const brut = localStorage.getItem(DATA_KEY);
-        return brut ? JSON.parse(brut) : null;
-    } catch {
-        return null;
-    }
+function formatAIHistoryDuration(value) {
+  return Number.isFinite(value) ? `${value.toFixed(1)} s` : "Durée inconnue";
 }
 
-async function createFile() {
-    try {
-        const noms = clients =  [... new Set(historique.map((nom) => nom.customerName).sort((a, b) => a.localeCompare(b)))];
- 
-        localStorage.setItem(DATA_KEY, JSON.stringify(noms));
-        return noms;
-    } catch (err) {
-        console.error("Impossible de créer data.json :", err);
-        return [];
-    }
+function getAIHistoryTimestamp(value) {
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function getAIHistoryDateKey(value) {
+  const timestamp = getAIHistoryTimestamp(value);
+  if (timestamp === 0) return "";
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeAIHistoryText(value) {
+  return String(value || "")
+    .trim()
+    .toLocaleLowerCase("fr-FR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
