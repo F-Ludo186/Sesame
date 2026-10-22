@@ -1,0 +1,224 @@
+.promotions-page {
+  color: var(--roast);
+}
+
+.promotions-page .history-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  margin-bottom: 24px;
+}
+
+.promotions-page .history-heading header h2 {
+  margin: 0 0 6px;
+}
+
+.promotions-page .history-heading header p,
+.promo-admin-heading p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.promotions-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.75fr) minmax(0, 1.5fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.promo-admin-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 6px 20px rgb(46 29 20 / 6%);
+}
+
+.promo-admin-heading {
+  margin-bottom: 18px;
+}
+
+.promo-admin-heading h3 {
+  margin: 0 0 5px;
+  font-family: var(--font-display);
+}
+
+.promo-admin-heading p {
+  font-size: 0.9rem;
+}
+
+.promo-admin-form {
+  display: grid;
+  gap: 8px;
+}
+
+.promo-admin-form label {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.promo-admin-form input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--roast);
+}
+
+.promo-admin-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.promo-admin-fields > div {
+  display: grid;
+  gap: 8px;
+}
+
+.promo-admin-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 10px;
+}
+
+.promo-primary-button,
+.promo-secondary-button,
+.promo-action-button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--roast);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.promo-primary-button {
+  background: var(--roast);
+  color: var(--cream);
+}
+
+.promo-primary-button:hover {
+  background: var(--accent-dark);
+}
+
+.promo-secondary-button,
+.promo-action-button {
+  background: transparent;
+  color: var(--roast);
+}
+
+.promo-secondary-button:hover,
+.promo-action-button:hover {
+  background: var(--cream-deep);
+}
+
+.promo-admin-message {
+  min-height: 1.4em;
+  margin: 5px 0 0;
+  color: var(--sage);
+  font-size: 0.88rem;
+}
+
+.promo-admin-table-wrap {
+  overflow: auto;
+  max-height: min(68vh, 720px);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.promo-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.promo-admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 11px 12px;
+  background: var(--roast);
+  color: white;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.promo-admin-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.promo-admin-table tbody tr:nth-child(even) {
+  background: var(--cream);
+}
+
+.promo-admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.promo-action-button {
+  min-height: 34px;
+  padding: 6px 9px;
+  font-size: 0.82rem;
+}
+
+.promo-action-button.is-danger {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.promo-action-button.is-danger:hover {
+  background: #fae9e7;
+}
+
+.promo-admin-empty {
+  margin: 0;
+  padding: 18px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.promo-admin-empty[hidden],
+.promo-admin-form [hidden] {
+  display: none;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 850px) {
+  .promotions-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .promotions-page .history-heading {
+    gap: 14px;
+  }
+
+  .promo-admin-card {
+    padding: 14px;
+  }
+
+  .promo-admin-table {
+    min-width: 560px;
+  }
+}

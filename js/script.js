@@ -342,7 +342,14 @@ function validateCheckout(){
 
 // sauve hitory
 function saveOrderHistory(){
-  if(order.promo != null) order.promo.nb--;
+  if(order.promo != null) {
+    order.promo.nb--;
+    try {
+      savePromoStocks();
+    } catch (error) {
+      console.error("Impossible de sauvegarder le stock des promotions :", error);
+    }
+  }
 
   const histo = {...order, totalRemise: order.getDiscount() ,totalorder : order.getTotal() };
  
@@ -425,6 +432,7 @@ async function showHistoryIAView() {
 
 async function showPromotionsView() {
     await loadView("promotions.html");
+    initPromotionsAdmin();
 }
 
 async function loadView(fichier) {

@@ -1,12 +1,68 @@
-<section id="Promotions-panel">
-    
-    <button id="btn-retour-caisse" class="btn-retour" type="button">
-        ← Retour
-    </button>
-    
-    <h2>Liste des promotions</h2>
+<link rel="stylesheet" href="css/promotions.css">
 
-    <div id="historique-liste">
-        ...
-    </div>
+<section id="promotions-admin" class="promotions-page" aria-labelledby="promotions-title">
+  <div class="history-heading">
+    <button id="btn-retour-caisse" class="btn-retour" type="button">← Retour</button>
+    <header>
+      <h2 id="promotions-title">Gestion des promotions</h2>
+      <p>Crée, modifie ou supprime les codes promotionnels et leur stock.</p>
+    </header>
+  </div>
+
+  <div class="promotions-layout">
+    <section class="promo-admin-card" aria-labelledby="promo-form-title">
+      <div class="promo-admin-heading">
+        <h3 id="promo-form-title">Nouvelle promotion</h3>
+        <p>Le code est appliqué à la caisse sans tenir compte des minuscules ou des espaces.</p>
+      </div>
+
+      <form id="promo-admin-form" class="promo-admin-form">
+        <label for="promo-admin-code">Code promotionnel</label>
+        <input id="promo-admin-code" name="code" type="text" minlength="3" maxlength="20" required placeholder="Ex. ETE-2026" autocomplete="off">
+
+        <label for="promo-admin-label">Libellé affiché</label>
+        <input id="promo-admin-label" name="libelle" type="text" maxlength="60" required placeholder="Ex. remise estivale">
+
+        <div class="promo-admin-fields">
+          <div>
+            <label for="promo-admin-discount">Remise (%)</label>
+            <input id="promo-admin-discount" name="remise" type="number" min="1" max="100" step="1" required>
+          </div>
+          <div>
+            <label for="promo-admin-stock">Stock disponible</label>
+            <input id="promo-admin-stock" name="nb" type="number" min="0" step="1" required>
+          </div>
+        </div>
+
+        <div class="promo-admin-form-actions">
+          <button id="promo-admin-submit" class="promo-primary-button" type="submit">Créer la promotion</button>
+          <button id="promo-admin-cancel" class="promo-secondary-button" type="button" hidden>Annuler</button>
+        </div>
+        <p id="promo-admin-message" class="promo-admin-message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="promo-admin-card" aria-labelledby="promo-list-title">
+      <div class="promo-admin-heading">
+        <h3 id="promo-list-title">Promotions enregistrées</h3>
+        <p>Le stock restant est partagé avec la caisse.</p>
+      </div>
+
+      <div class="promo-admin-table-wrap">
+        <table class="promo-admin-table">
+          <thead>
+            <tr>
+              <th scope="col">Code</th>
+              <th scope="col">Libellé</th>
+              <th scope="col">Remise</th>
+              <th scope="col">Stock</th>
+              <th scope="col"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody id="promo-admin-body"></tbody>
+        </table>
+        <p id="promo-admin-empty" class="promo-admin-empty" hidden>Aucune promotion enregistrée. Crée-en une avec le formulaire.</p>
+      </div>
+    </section>
+  </div>
 </section>
