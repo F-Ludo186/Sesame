@@ -1,0 +1,105 @@
+<link rel="stylesheet" href="css/historiqueIA.css">
+
+<section id="historique-panel" class="ai-history-page" aria-labelledby="ai-history-title">
+  <div class="history-heading">
+    <button id="btn-retour-caisse" class="btn-retour" type="button">
+      ← Retour
+    </button>
+    <header>
+      <h2 id="ai-history-title">Historique des IA</h2>
+      <p>Consulte les commandes et recommandations générées par l’intelligence artificielle.</p>
+    </header>
+  </div>
+
+  <div class="ai-history-columns">
+    <section class="ai-history-card" aria-labelledby="order-history-title">
+      <div class="ai-history-card-heading">
+        <div>
+          <h3 id="order-history-title">Prise de commande</h3>
+          <p>Demandes analysées et produits ajoutés au ticket.</p>
+        </div>
+        <span id="order-history-count" class="ai-history-count">0 résultat</span>
+      </div>
+
+      <form class="ai-history-filters" id="order-history-filters">
+        <label>
+          <span>Recherche</span>
+          <input id="order-history-search" type="search" placeholder="Commande, prénom, produit…">
+        </label>
+        <div class="ai-history-filter-row">
+          <label>
+            <span>Du</span>
+            <input id="order-history-from" type="date">
+          </label>
+          <label>
+            <span>Au</span>
+            <input id="order-history-to" type="date">
+          </label>
+          <label>
+            <span>Résultat</span>
+            <select id="order-history-status">
+              <option value="all">Tous</option>
+              <option value="success">Réussies</option>
+              <option value="error">Sans résultat</option>
+            </select>
+          </label>
+        </div>
+      </form>
+
+      <div class="ai-history-table-wrap">
+        <table class="ai-history-table">
+          <thead>
+            <tr><th scope="col">Date</th><th scope="col">Demande</th><th scope="col">Résultat</th></tr>
+          </thead>
+          <tbody id="order-history-body"></tbody>
+        </table>
+        <p id="order-history-empty" class="ai-history-empty" hidden>Aucune commande ne correspond aux filtres.</p>
+      </div>
+    </section>
+
+    <section class="ai-history-card" aria-labelledby="advice-history-title">
+      <div class="ai-history-card-heading">
+        <div>
+          <h3 id="advice-history-title">Conseils produits</h3>
+          <p>Envies des clients et suggestions proposées.</p>
+        </div>
+        <span id="advice-history-count" class="ai-history-count">0 résultat</span>
+      </div>
+
+      <form class="ai-history-filters" id="advice-history-filters">
+        <label>
+          <span>Recherche</span>
+          <input id="advice-history-search" type="search" placeholder="Envie, prénom, produit…">
+        </label>
+        <div class="ai-history-filter-row">
+          <label>
+            <span>Du</span>
+            <input id="advice-history-from" type="date">
+          </label>
+          <label>
+            <span>Au</span>
+            <input id="advice-history-to" type="date">
+          </label>
+          <label>
+            <span>Résultat</span>
+            <select id="advice-history-status">
+              <option value="all">Tous</option>
+              <option value="success">Avec suggestions</option>
+              <option value="error">Sans suggestion</option>
+            </select>
+          </label>
+        </div>
+      </form>
+
+      <div class="ai-history-table-wrap">
+        <table class="ai-history-table">
+          <thead>
+            <tr><th scope="col">Date</th><th scope="col">Envie et suggestions</th><th scope="col">Prénom</th></tr>
+          </thead>
+          <tbody id="advice-history-body"></tbody>
+        </table>
+        <p id="advice-history-empty" class="ai-history-empty" hidden>Aucun conseil ne correspond aux filtres.</p>
+      </div>
+    </section>
+  </div>
+</section>

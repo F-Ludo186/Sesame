@@ -29,6 +29,7 @@ function initEvents() {
 function initNavigationEvents() {
   $("#btn-historique").addEventListener("click", showHistoryView);
   $("#btn-promotions").addEventListener("click", showPromotionsView);
+  $("#btn-historique-ia").addEventListener("click", showHistoryIAView);
 }
 
 function initMenuEvents(){
@@ -417,6 +418,10 @@ async function showHistoryView() {
     await loadView("historique.html");
     InitHistory();
 }
+async function showHistoryIAView() {
+    await loadView("historiqueIA.html");
+    InitHistoryIA();
+}
 
 async function showPromotionsView() {
     await loadView("promotions.html");
@@ -537,7 +542,7 @@ $("#ai-advice-form").addEventListener("submit", async function (event) {
   } else {
     // faire un affichage des menu avec en premier les menu conseillé
     menuAdvice = response.lines.map(item => item.id);
-    message.textContent = response.phrase || "Voici les produits que je vous conseille.";
+    $("#ai-advice-message").textContent = response.phrase || "Voici les produits que je vous conseille.";
     displayMenu(getFilteredMenu(filteredMenu));
 
   }
